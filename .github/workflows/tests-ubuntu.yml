@@ -24,7 +24,20 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
         env:
-          - TOXENV: py
+          - TOXENV: py-all
+        include:
+          - python-version: '3.10'
+            env:
+              TOXENV: py-pinned
+          - python-version: '3.10'
+            env:
+              TOXENV: py-pinned-noreactor
+          - python-version: '3.13'
+            env:
+              TOXENV: py-all-noreactor
+          - python-version: '3.13'
+            env:
+              TOXENV: py-httpx
 
     steps:
     - uses: actions/checkout@v6

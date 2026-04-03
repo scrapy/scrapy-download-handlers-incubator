@@ -28,7 +28,13 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "Scrapy>=2.14,<2.16",
+#    "Scrapy>=2.14,<2.16",
+    "Scrapy @ git+https://github.com/scrapy/scrapy@58d8528",
+]
+
+[project.optional-dependencies]
+httpx = [
+    "httpx>=0.28.1",
 ]
 
 [project.urls]
@@ -42,14 +48,40 @@ include = [
     "/tox.toml",
 ]
 
+# remove when Scrapy 2.15.0 is released
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [tool.coverage.run]
 branch = true
+
+[tool.coverage.paths]
+source = [
+    "src/scrapy_download_handlers_incubator",
+    ".tox/**/site-packages/scrapy_download_handlers_incubator"
+]
 
 [tool.mypy]
 strict = true
 
+[[tool.mypy.overrides]]
+module = "tests.*"
+allow_untyped_defs = true
+check_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "twisted.internet.interfaces"
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = "twisted.internet.reactor"
+follow_imports = "skip"
+
 [tool.pytest]
 addopts = ["--import-mode=importlib"]
+filterwarnings = [
+    "ignore::DeprecationWarning:twisted.web.static",
+]
 strict = true
 
 [tool.ruff.lint]
@@ -154,11 +186,24 @@ ignore = [
     "D402",
     # First word of the first line should be properly capitalized
     "D403",
-    # `try`-`except` within a loop incurs performance overhead
+    # Magic value used in comparison
+    "PLR2004",
+    # Use of `assert` detected
+    "S101",
+]
+
+[tool.ruff.lint.flake8-tidy-imports]
+banned-module-level-imports = [
+    "twisted.internet.reactor",
 ]
 
 [tool.ruff.lint.isort]
 split-on-trailing-comma = false
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S",
+]
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"

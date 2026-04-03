@@ -1,31 +1,43 @@
 requires = ["tox>=4.25"]
 env_list = [
-    "py",
+    { product = [["py"], ["httpx", "all", "pinned"], ["", "noreactor"]] },
     "pre-commit",
     "typing",
     "twinecheck",
 ]
 
-[env.py]
+[env_run_base]
+pass_env = [
+    "PYTEST_ADDOPTS",
+]
 deps = [
     "pytest>=9",
     "pytest-cov>=7.0.0",
     "pytest-xdist>=3.7.0",
+    { replace = "if", condition = "not factor.noreactor", then = ["pytest-twisted"], extend = true },
+    { replace = "if", condition = "factor.noreactor", then = ["pytest-asyncio"], extend = true },
+    { replace = "if", condition = "factor.pinned", then = [
+        "httpx==0.28.1",
+    ], extend = true },
+]
+extras = [
+    { replace = "if", condition = "factor.all or factor.httpx", then = ["httpx"], extend = true },
 ]
 commands = [
     [
         "pytest",
         { replace = "posargs", default = [
             "--cov-config=pyproject.toml",
-            "--cov=src",
+            "--cov=scrapy_download_handlers_incubator",
             "--cov-report=term-missing",
             "--cov-report=xml",
             "--cov-report=html",
-            "--junitxml=py.junit.xml",
+            "--junitxml={env_name}.junit.xml",
             "-o",
             "junit_family=legacy",
             "tests",
         ], extend = true },
+        { replace = "if", condition = "not factor.noreactor", then = ["--reactor=asyncio"], extend = true },
     ],
 ]
 
@@ -40,7 +52,9 @@ commands = [
 [env.typing]
 deps = [
     "mypy==1.20.0",
-    "Scrapy==2.14.2",
+    "httpx==0.28.1",
+    "pytest==9.0.2",
+    # "Scrapy==2.14.2",
 ]
 commands = [
     ["mypy", { replace = "posargs", default = ["src", "tests"], extend = true }],
