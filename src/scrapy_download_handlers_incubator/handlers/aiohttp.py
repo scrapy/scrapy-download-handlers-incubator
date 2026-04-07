@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, NoReturn, TypedDict
@@ -114,7 +115,7 @@ class AiohttpDownloadHandler(BaseHttpDownloadHandler):
             finally:
                 aiohttp_response.release()
                 await aiohttp_response.wait_for_close()
-        except TimeoutError as e:
+        except (TimeoutError, asyncio.TimeoutError) as e:
             raise DownloadTimeoutError(
                 f"Getting {request.url} took longer than {timeout_value} seconds."
             ) from e
