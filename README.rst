@@ -64,3 +64,25 @@ Enable it with:
     }
 
 .. _httpx: https://www.python-httpx.org/
+
+NiquestsDownloadHandler
+-----------------------
+
+This handler supports HTTP/1.1 and uses the niquests_ library.
+
+Install it with:
+
+.. code:: bash
+
+    pip install scrapy-download-handlers-incubator[niquests]
+
+Enable it with:
+
+.. code-block:: python
+
+    DOWNLOAD_HANDLERS = {
+        "http": "scrapy_download_handlers_incubator.NiquestsDownloadHandler",
+        "https": "scrapy_download_handlers_incubator.NiquestsDownloadHandler",
+    }
+
+.. _niquests: https://niquests.readthedocs.io/en/latest/
