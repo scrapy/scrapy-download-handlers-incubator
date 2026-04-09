@@ -91,7 +91,7 @@ class TestHttp11(NiquestsDownloadHandlerMixin, TestHttp11Base):
 
 class TestHttps11(NiquestsDownloadHandlerMixin, TestHttps11Base):
     handler_merges_headers = True
-    tls_log_message = "SSL connection to TODO using protocol TLSv1_3, cipher"
+    tls_log_message = "SSL connection to 127.0.0.1 using protocol TLSv1_3, cipher"
 
 
 class TestSimpleHttps(NiquestsDownloadHandlerMixin, TestSimpleHttpsBase):

@@ -6,6 +6,7 @@ import ipaddress
 import logging
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, NoReturn, TypedDict
+from urllib.parse import urlparse
 
 from scrapy import Request, signals
 from scrapy.exceptions import (
@@ -200,7 +201,7 @@ class NiquestsDownloadHandler(BaseHttpDownloadHandler):
             else None,
         }
 
-        self._log_tls_info(nq_response.conn_info)
+        self._log_tls_info(nq_response.conn_info, request.url)
 
         if stop_download := check_stop_download(
             signals.headers_received,
@@ -269,12 +270,12 @@ class NiquestsDownloadHandler(BaseHttpDownloadHandler):
             return ipaddress.ip_address(conn_info.destination_address[0])
         return None
 
-    def _log_tls_info(self, conn_info: urllib3.ConnectionInfo) -> None:
+    def _log_tls_info(self, conn_info: urllib3.ConnectionInfo, url: str) -> None:
         if not self._tls_verbose_logging:
             return
         if conn_info.tls_version:
             logger.debug(
-                f"SSL connection to TODO"
+                f"SSL connection to {urlparse(url).hostname}"
                 f" using protocol {conn_info.tls_version.name},"
                 f" cipher {conn_info.cipher}"
             )
