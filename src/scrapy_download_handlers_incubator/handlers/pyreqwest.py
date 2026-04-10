@@ -37,7 +37,13 @@ except ImportError:
     pyreqwest = None  # type: ignore[assignment]
 
 
-class PyreqwestDownloadHandler(BaseIncubatorDownloadHandler):
+if TYPE_CHECKING:
+    _Base = BaseIncubatorDownloadHandler[pyreqwest.response.Response]
+else:
+    _Base = BaseIncubatorDownloadHandler
+
+
+class PyreqwestDownloadHandler(_Base):
     def __init__(self, crawler: Crawler):
         super().__init__(crawler)
         builder: pyreqwest.client.ClientBuilder = (

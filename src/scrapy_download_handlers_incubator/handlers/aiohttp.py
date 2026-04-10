@@ -34,7 +34,13 @@ except ImportError:
     aiohttp = None  # type: ignore[assignment]
 
 
-class AiohttpDownloadHandler(BaseIncubatorDownloadHandler):
+if TYPE_CHECKING:
+    _Base = BaseIncubatorDownloadHandler[aiohttp.ClientResponse]
+else:
+    _Base = BaseIncubatorDownloadHandler
+
+
+class AiohttpDownloadHandler(_Base):
     def __init__(self, crawler: Crawler):
         super().__init__(crawler)
         self._ssl_context = _make_ssl_context(crawler.settings)

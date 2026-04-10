@@ -41,7 +41,13 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class NiquestsDownloadHandler(BaseIncubatorDownloadHandler):
+if TYPE_CHECKING:
+    _Base = BaseIncubatorDownloadHandler[niquests.AsyncResponse]
+else:
+    _Base = BaseIncubatorDownloadHandler
+
+
+class NiquestsDownloadHandler(_Base):
     def __init__(self, crawler: Crawler):
         super().__init__(crawler)
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

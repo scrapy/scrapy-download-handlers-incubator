@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, Any, Generic, NoReturn, TypeVar
 
 from scrapy import Request, signals
 from scrapy.exceptions import (
@@ -33,8 +33,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_ResponseT = TypeVar("_ResponseT")
 
-class BaseIncubatorDownloadHandler(BaseHttpDownloadHandler, ABC):
+
+class BaseIncubatorDownloadHandler(BaseHttpDownloadHandler, ABC, Generic[_ResponseT]):
     _DEFAULT_CONNECT_TIMEOUT = 10
     _ITER_CHUNK_SIZE = 2048
 
@@ -65,7 +67,7 @@ class BaseIncubatorDownloadHandler(BaseHttpDownloadHandler, ABC):
     @abstractmethod
     def _make_request(
         self, request: Request, timeout: float
-    ) -> AbstractAsyncContextManager[Any]:
+    ) -> AbstractAsyncContextManager[_ResponseT]:
         """Return an async context manager yielding the library-specific response.
 
         Exceptions raised by the library should be reraised as Scrapy-specific ones.
@@ -74,7 +76,7 @@ class BaseIncubatorDownloadHandler(BaseHttpDownloadHandler, ABC):
 
     @staticmethod
     @abstractmethod
-    def _extract_headers(response: Any) -> Headers:
+    def _extract_headers(response: _ResponseT) -> Headers:
         """Convert library-specific response headers to a
         :class:`~scrapy.http.headers.Headers` object."""
         raise NotImplementedError
@@ -82,14 +84,14 @@ class BaseIncubatorDownloadHandler(BaseHttpDownloadHandler, ABC):
     @staticmethod
     @abstractmethod
     def _build_base_response_args(
-        response: Any, request: Request, headers: Headers
+        response: _ResponseT, request: Request, headers: Headers
     ) -> dict[str, Any]:
         """Build kwargs for :func:`scrapy.utils._download_handlers.make_response`."""
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def _iter_body_chunks(response: Any) -> AsyncIterable[SizedBuffer]:
+    def _iter_body_chunks(response: _ResponseT) -> AsyncIterable[SizedBuffer]:
         """Return an async iterable yielding body chunks from the response."""
         raise NotImplementedError
 
@@ -99,7 +101,7 @@ class BaseIncubatorDownloadHandler(BaseHttpDownloadHandler, ABC):
         """Return True if ``exc`` represents dataloss."""
         raise NotImplementedError
 
-    def _log_tls_info(self, response: Any, request: Request) -> None:
+    def _log_tls_info(self, response: _ResponseT, request: Request) -> None:
         """Log TLS connection details, if possible."""
 
     async def download_request(self, request: Request) -> Response:
@@ -110,7 +112,7 @@ class BaseIncubatorDownloadHandler(BaseHttpDownloadHandler, ABC):
         async with self._make_request(request, timeout) as response:
             return await self._read_response(response, request)
 
-    async def _read_response(self, response: Any, request: Request) -> Response:
+    async def _read_response(self, response: _ResponseT, request: Request) -> Response:
         maxsize: int = request.meta.get("download_maxsize", self._default_maxsize)
         warnsize: int = request.meta.get("download_warnsize", self._default_warnsize)
 

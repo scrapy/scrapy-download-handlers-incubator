@@ -37,7 +37,13 @@ except ImportError:
     httpx = None  # type: ignore[assignment]
 
 
-class HttpxDownloadHandler(BaseIncubatorDownloadHandler):
+if TYPE_CHECKING:
+    _Base = BaseIncubatorDownloadHandler[httpx.Response]
+else:
+    _Base = BaseIncubatorDownloadHandler
+
+
+class HttpxDownloadHandler(_Base):
     def __init__(self, crawler: Crawler):
         super().__init__(crawler)
         self._client = httpx.AsyncClient(
