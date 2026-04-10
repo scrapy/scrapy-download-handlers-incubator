@@ -37,7 +37,6 @@ commands = [
             "--cov=scrapy_download_handlers_incubator",
             "--cov-report=term-missing",
             "--cov-report=xml",
-            "--cov-report=html",
             "--junitxml={env_name}.junit.xml",
             "-o",
             "junit_family=legacy",
@@ -63,7 +62,7 @@ deps = [
     "niquests==3.18.4",
     "pyreqwest==0.11.6",
     "pytest==9.0.2",
-     "Scrapy==2.15.0",
+    "Scrapy==2.15.0",
 ]
 commands = [
     ["mypy", { replace = "posargs", default = ["src", "tests"], extend = true }],

@@ -77,7 +77,7 @@ class NiquestsDownloadHandler(BaseHttpDownloadHandler):
         super().__init__(crawler)
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         logger.warning(
-            "NiquestsDownloadHandler is experimental and is not recommented for production use."
+            "NiquestsDownloadHandler is experimental and is not recommended for production use."
         )
         bind_address = crawler.settings.get("DOWNLOAD_BIND_ADDRESS")
         bind_address = normalize_bind_address(bind_address)

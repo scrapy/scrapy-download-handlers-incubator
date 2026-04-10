@@ -60,7 +60,7 @@ class AiohttpDownloadHandler(BaseHttpDownloadHandler):
                 f"{type(self).__name__} requires the asyncio support. Make"
                 f" sure that you have either enabled the asyncio Twisted"
                 f" reactor in the TWISTED_REACTOR setting or disabled the"
-                f" TWISTED_ENABLED setting. See the asyncio documentation"
+                f" TWISTED_REACTOR_ENABLED setting. See the asyncio documentation"
                 f" of Scrapy for more information."
             )
         if aiohttp is None:  # pragma: no cover
