@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from scrapy.exceptions import (
     CannotResolveHostError,
@@ -18,6 +18,7 @@ from scrapy.http import Headers
 
 from scrapy_download_handlers_incubator.handlers._base import (
     BaseIncubatorDownloadHandler,
+    _BaseResponseArgs,
 )
 
 if TYPE_CHECKING:
@@ -116,7 +117,7 @@ class PyreqwestDownloadHandler(_Base):
         response: pyreqwest.response.Response,
         request: Request,
         headers: Headers,
-    ) -> dict[str, Any]:
+    ) -> _BaseResponseArgs:
         return {
             "status": response.status,
             "url": request.url,

@@ -5,7 +5,7 @@ from __future__ import annotations
 import ipaddress
 import ssl
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from scrapy.exceptions import (
     CannotResolveHostError,
@@ -20,6 +20,7 @@ from scrapy.utils.ssl import _log_sslobj_debug_info, _make_ssl_context
 
 from scrapy_download_handlers_incubator.handlers._base import (
     BaseIncubatorDownloadHandler,
+    _BaseResponseArgs,
 )
 from scrapy_download_handlers_incubator.utils import NullCookieJar
 
@@ -102,7 +103,7 @@ class HttpxDownloadHandler(_Base):
         response: httpx.Response,
         request: Request,
         headers: Headers,
-    ) -> dict[str, Any]:
+    ) -> _BaseResponseArgs:
         network_stream: AsyncNetworkStream = response.extensions["network_stream"]
         extra_server_addr = network_stream.get_extra_info("server_addr")
         ip_address = ipaddress.ip_address(extra_server_addr[0])

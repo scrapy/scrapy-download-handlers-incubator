@@ -5,7 +5,7 @@ from __future__ import annotations
 import ipaddress
 import logging
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from scrapy.exceptions import (
@@ -20,6 +20,7 @@ from scrapy.http import Headers
 
 from scrapy_download_handlers_incubator.handlers._base import (
     BaseIncubatorDownloadHandler,
+    _BaseResponseArgs,
 )
 from scrapy_download_handlers_incubator.utils import NullCookieJar
 
@@ -120,7 +121,7 @@ class NiquestsDownloadHandler(_Base):
         response: niquests.AsyncResponse,
         request: Request,
         headers: Headers,
-    ) -> dict[str, Any]:
+    ) -> _BaseResponseArgs:
         assert response.conn_info is not None
         ip_address = None
         if response.conn_info.destination_address:

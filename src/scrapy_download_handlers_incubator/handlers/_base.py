@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Generic, NoReturn, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, NoReturn, TypedDict, TypeVar
 
 from scrapy import Request, signals
 from scrapy.exceptions import (
@@ -25,15 +25,27 @@ from scrapy.utils.asyncio import is_asyncio_available
 if TYPE_CHECKING:
     from collections.abc import AsyncIterable
     from contextlib import AbstractAsyncContextManager
+    from ipaddress import IPv4Address, IPv6Address
 
     from _typeshed import SizedBuffer
     from scrapy.crawler import Crawler
     from scrapy.http import Headers, Response
 
+    # typing.NotRequired requires Python 3.11
+    from typing_extensions import NotRequired
+
 
 logger = logging.getLogger(__name__)
 
 _ResponseT = TypeVar("_ResponseT")
+
+
+class _BaseResponseArgs(TypedDict):
+    status: int
+    url: str
+    headers: Headers
+    ip_address: NotRequired[IPv4Address | IPv6Address | None]
+    protocol: str | None
 
 
 class BaseIncubatorDownloadHandler(BaseHttpDownloadHandler, ABC, Generic[_ResponseT]):
@@ -85,7 +97,7 @@ class BaseIncubatorDownloadHandler(BaseHttpDownloadHandler, ABC, Generic[_Respon
     @abstractmethod
     def _build_base_response_args(
         response: _ResponseT, request: Request, headers: Headers
-    ) -> dict[str, Any]:
+    ) -> _BaseResponseArgs:
         """Build kwargs for :func:`scrapy.utils._download_handlers.make_response`."""
         raise NotImplementedError
 

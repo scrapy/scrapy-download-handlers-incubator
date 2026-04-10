@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from scrapy.exceptions import (
     CannotResolveHostError,
@@ -19,6 +19,7 @@ from scrapy.utils.ssl import _make_ssl_context
 
 from scrapy_download_handlers_incubator.handlers._base import (
     BaseIncubatorDownloadHandler,
+    _BaseResponseArgs,
 )
 
 if TYPE_CHECKING:
@@ -115,7 +116,7 @@ class AiohttpDownloadHandler(_Base):
         response: aiohttp.ClientResponse,
         request: Request,
         headers: Headers,
-    ) -> dict[str, Any]:
+    ) -> _BaseResponseArgs:
         version = response.version
         protocol_version = (
             f"HTTP/{version.major}.{version.minor}" if version else "HTTP/1.1"
