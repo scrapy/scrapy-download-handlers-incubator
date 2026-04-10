@@ -1,0 +1,252 @@
+from __future__ import annotations
+
+import logging
+from abc import ABC, abstractmethod
+from io import BytesIO
+from typing import TYPE_CHECKING, Any, Generic, NoReturn, TypedDict, TypeVar
+
+from scrapy import Request, signals
+from scrapy.exceptions import (
+    DownloadCancelledError,
+    NotConfigured,
+    ResponseDataLossError,
+)
+from scrapy.utils._download_handlers import (
+    BaseHttpDownloadHandler,
+    check_stop_download,
+    get_dataloss_msg,
+    get_maxsize_msg,
+    get_warnsize_msg,
+    make_response,
+    normalize_bind_address,
+)
+from scrapy.utils.asyncio import is_asyncio_available
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterable
+    from contextlib import AbstractAsyncContextManager
+    from ipaddress import IPv4Address, IPv6Address
+
+    from _typeshed import SizedBuffer
+    from scrapy.crawler import Crawler
+    from scrapy.http import Headers, Response
+
+    # typing.NotRequired requires Python 3.11
+    from typing_extensions import NotRequired
+
+
+logger = logging.getLogger(__name__)
+
+_ResponseT = TypeVar("_ResponseT")
+
+
+class _BaseResponseArgs(TypedDict):
+    status: int
+    url: str
+    headers: Headers
+    ip_address: NotRequired[IPv4Address | IPv6Address | None]
+    protocol: str | None
+
+
+class BaseIncubatorDownloadHandler(BaseHttpDownloadHandler, ABC, Generic[_ResponseT]):
+    _DEFAULT_CONNECT_TIMEOUT = 10
+    _ITER_CHUNK_SIZE = 2048
+
+    def __init__(self, crawler: Crawler):
+        if not is_asyncio_available():  # pragma: no cover
+            raise NotConfigured(
+                f"{type(self).__name__} requires the asyncio support. Make"
+                f" sure that you have either enabled the asyncio Twisted"
+                f" reactor in the TWISTED_REACTOR setting or disabled the"
+                f" TWISTED_REACTOR_ENABLED setting. See the asyncio documentation"
+                f" of Scrapy for more information."
+            )
+        self._check_deps_installed()
+        super().__init__(crawler)
+        logger.warning(
+            f"{type(self).__name__} is experimental and is not recommended for production use."
+        )
+        self._bind_address = normalize_bind_address(
+            crawler.settings.get("DOWNLOAD_BIND_ADDRESS")
+        )
+
+    @staticmethod
+    @abstractmethod
+    def _check_deps_installed() -> None:
+        """Raise NotConfigured if the required deps are not installed."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def _make_request(
+        self, request: Request, timeout: float
+    ) -> AbstractAsyncContextManager[_ResponseT]:
+        """Return an async context manager yielding the library-specific response.
+
+        Exceptions raised by the library should be reraised as Scrapy-specific ones.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    @abstractmethod
+    def _extract_headers(response: _ResponseT) -> Headers:
+        """Convert library-specific response headers to a
+        :class:`~scrapy.http.headers.Headers` object."""
+        raise NotImplementedError
+
+    @staticmethod
+    @abstractmethod
+    def _build_base_response_args(
+        response: _ResponseT, request: Request, headers: Headers
+    ) -> _BaseResponseArgs:
+        """Build kwargs for :func:`scrapy.utils._download_handlers.make_response`."""
+        raise NotImplementedError
+
+    @staticmethod
+    @abstractmethod
+    def _iter_body_chunks(response: _ResponseT) -> AsyncIterable[SizedBuffer]:
+        """Return an async iterable yielding body chunks from the response."""
+        raise NotImplementedError
+
+    @staticmethod
+    @abstractmethod
+    def _is_dataloss_exception(exc: Exception) -> bool:
+        """Return True if ``exc`` represents dataloss."""
+        raise NotImplementedError
+
+    def _log_tls_info(self, response: _ResponseT, request: Request) -> None:
+        """Log TLS connection details, if possible."""
+
+    async def download_request(self, request: Request) -> Response:
+        self._warn_unsupported_meta(request.meta)
+        timeout: float = request.meta.get(
+            "download_timeout", self._DEFAULT_CONNECT_TIMEOUT
+        )
+        async with self._make_request(request, timeout) as response:
+            return await self._read_response(response, request)
+
+    async def _read_response(self, response: _ResponseT, request: Request) -> Response:
+        maxsize: int = request.meta.get("download_maxsize", self._default_maxsize)
+        warnsize: int = request.meta.get("download_warnsize", self._default_warnsize)
+
+        headers = self._extract_headers(response)
+        content_length = headers.get("Content-Length")
+        expected_size = int(content_length) if content_length is not None else None
+        if maxsize and expected_size and expected_size > maxsize:
+            self._cancel_maxsize(expected_size, maxsize, request, expected=True)
+
+        reached_warnsize = False
+        if warnsize and expected_size and expected_size > warnsize:
+            reached_warnsize = True
+            logger.warning(
+                get_warnsize_msg(expected_size, warnsize, request, expected=True)
+            )
+
+        make_response_base_args = self._build_base_response_args(
+            response, request, headers
+        )
+
+        if self._tls_verbose_logging:
+            self._log_tls_info(response, request)
+
+        if stop_download := check_stop_download(
+            signals.headers_received,
+            self.crawler,
+            request,
+            headers=headers,
+            body_length=expected_size,
+        ):
+            return make_response(
+                **make_response_base_args,
+                stop_download=stop_download,
+            )
+
+        response_body = BytesIO()
+        bytes_received = 0
+        try:
+            async for chunk in self._iter_body_chunks(response):
+                response_body.write(chunk)
+                bytes_received += len(chunk)
+
+                if stop_download := check_stop_download(
+                    signals.bytes_received, self.crawler, request, data=chunk
+                ):
+                    return make_response(
+                        **make_response_base_args,
+                        body=response_body.getvalue(),
+                        stop_download=stop_download,
+                    )
+
+                if maxsize and bytes_received > maxsize:
+                    response_body.truncate(0)
+                    self._cancel_maxsize(
+                        bytes_received, maxsize, request, expected=False
+                    )
+
+                if warnsize and bytes_received > warnsize and not reached_warnsize:
+                    reached_warnsize = True
+                    logger.warning(
+                        get_warnsize_msg(
+                            bytes_received, warnsize, request, expected=False
+                        )
+                    )
+        except Exception as e:
+            if not self._is_dataloss_exception(e):
+                raise
+            fail_on_dataloss: bool = request.meta.get(
+                "download_fail_on_dataloss", self._fail_on_dataloss
+            )
+            if not fail_on_dataloss:
+                return make_response(
+                    **make_response_base_args,
+                    body=response_body.getvalue(),
+                    flags=["dataloss"],
+                )
+            if not self._fail_on_dataloss_warned:
+                logger.warning(get_dataloss_msg(request.url))
+                self._fail_on_dataloss_warned = True
+            raise ResponseDataLossError(str(e)) from e
+
+        return make_response(
+            **make_response_base_args,
+            body=response_body.getvalue(),
+        )
+
+    def _get_bind_address_host(self) -> str | None:
+        """Return the host portion of the bind address.
+
+        Needed for handlers than don't support the bind port.
+        """
+        if self._bind_address is None:
+            return None
+        host, port = self._bind_address
+        if port != 0:
+            logger.warning(
+                "DOWNLOAD_BIND_ADDRESS specifies a port (%s), but %s does not "
+                "support binding to a specific local port. Ignoring the port "
+                "and binding only to %r.",
+                port,
+                type(self).__name__,
+                host,
+            )
+        return host
+
+    def _warn_unsupported_meta(self, meta: dict[str, Any]) -> None:
+        # here for now as these are not implemented anywhere
+        if meta.get("bindaddress"):
+            logger.error(
+                f"The 'bindaddress' request meta key is not supported by"
+                f" {type(self).__name__} and will be ignored."
+            )
+        if meta.get("proxy"):
+            logger.error(
+                f"The 'proxy' request meta key is not supported by"
+                f" {type(self).__name__} and will be ignored."
+            )
+
+    @staticmethod
+    def _cancel_maxsize(
+        size: int, limit: int, request: Request, *, expected: bool
+    ) -> NoReturn:
+        warning_msg = get_maxsize_msg(size, limit, request, expected=expected)
+        logger.warning(warning_msg)
+        raise DownloadCancelledError(warning_msg)
