@@ -58,7 +58,7 @@ class TestHttpBase(ABC):
     # whether the handler merges values for the same header name
     handler_merges_headers = False
     # default headers added by the underlying library that cannot be suppressed
-    unremovable_default_headers: ClassVar[frozenset[str]] = frozenset()
+    always_present_req_headers: ClassVar[frozenset[str]] = frozenset()
 
     @property
     @abstractmethod
@@ -193,6 +193,7 @@ class TestHttpBase(ABC):
     async def test_server_receives_no_extra_headers(
         self, mockserver: MockServer
     ) -> None:
+        """Test that the handler doesn't add headers to the request."""
         request = Request(mockserver.url("/echo", is_secure=self.is_secure))
         async with self.get_dh() as download_handler:
             response = await download_handler.download_request(request)
@@ -204,7 +205,7 @@ class TestHttpBase(ABC):
             "Connection",
             "Content-Length",
             "Host",
-        } | self.unremovable_default_headers
+        } | self.always_present_req_headers
         extra_headers = received_headers - allowed_headers
         assert not extra_headers, body["headers"]
 
