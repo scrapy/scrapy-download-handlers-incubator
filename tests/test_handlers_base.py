@@ -293,6 +293,7 @@ class TestHttpBase(ABC):
         async with self.get_dh() as download_handler:
             response = await download_handler.download_request(request)
         assert response.status == 302
+        assert response.headers["Location"] == b"/redirected"
 
     @coroutine_test
     async def test_redirect_status_head(self, mockserver: MockServer) -> None:
@@ -302,6 +303,7 @@ class TestHttpBase(ABC):
         async with self.get_dh() as download_handler:
             response = await download_handler.download_request(request)
         assert response.status == 302
+        assert response.headers["Location"] == b"/redirected"
 
     @coroutine_test
     async def test_timeout_download_from_spider_nodata_rcvd(
