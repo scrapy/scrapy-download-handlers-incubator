@@ -61,6 +61,7 @@ class TestHttpBase(ABC):
     handler_merges_headers = False
     # default headers added by the underlying library that cannot be suppressed
     always_present_req_headers: ClassVar[frozenset[str]] = frozenset()
+    default_handler_settings: ClassVar[dict[str, Any]] = {}
 
     @property
     @abstractmethod
@@ -71,6 +72,10 @@ class TestHttpBase(ABC):
     async def get_dh(
         self, settings_dict: dict[str, Any] | None = None
     ) -> AsyncGenerator[DownloadHandlerProtocol]:
+        settings_dict = {
+            **self.default_handler_settings,
+            **(settings_dict or {}),
+        }
         crawler = get_crawler(DefaultSpider, settings_dict)
         crawler.spider = crawler._create_spider()
         dh = build_from_crawler(self.download_handler_cls, crawler)
@@ -410,9 +415,7 @@ class TestHttpBase(ABC):
 
     @coroutine_test
     async def test_response_header_content_length(self, mockserver: MockServer) -> None:
-        request = Request(
-            mockserver.url("/text", is_secure=self.is_secure), method="GET"
-        )
+        request = Request(mockserver.url("/text", is_secure=self.is_secure))
         async with self.get_dh() as download_handler:
             response = await download_handler.download_request(request)
         assert response.headers[b"content-length"] == b"5"
@@ -726,9 +729,7 @@ class TestHttp11Base(TestHttpBase):
 
     @coroutine_test
     async def test_protocol(self, mockserver: MockServer) -> None:
-        request = Request(
-            mockserver.url("/host", is_secure=self.is_secure), method="GET"
-        )
+        request = Request(mockserver.url("/host", is_secure=self.is_secure))
         async with self.get_dh() as download_handler:
             response = await download_handler.download_request(request)
         assert response.protocol == "HTTP/1.1"

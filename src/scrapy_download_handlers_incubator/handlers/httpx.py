@@ -47,11 +47,13 @@ else:
 class HttpxDownloadHandler(_Base):
     def __init__(self, crawler: Crawler):
         super().__init__(crawler)
+        enable_h2 = crawler.settings.getbool("HTTPX_HTTP2_ENABLED")
         self._client = httpx.AsyncClient(
             cookies=NullCookieJar(),
             transport=httpx.AsyncHTTPTransport(
                 verify=_make_ssl_context(crawler.settings),
                 local_address=self._get_bind_address_host(),
+                http2=enable_h2,
             ),
         )
         # https://github.com/encode/httpx/discussions/1566

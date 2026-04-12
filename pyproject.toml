@@ -36,7 +36,7 @@ aiohttp = [
     "aiohttp>=3.11.0",
 ]
 httpx = [
-    "httpx>=0.28.1",
+    "httpx[http2]>=0.28.1",
 ]
 niquests = [
     "niquests>=3.16.0",
