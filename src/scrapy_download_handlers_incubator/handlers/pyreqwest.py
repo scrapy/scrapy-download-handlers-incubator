@@ -47,8 +47,10 @@ else:
 class PyreqwestDownloadHandler(_Base):
     def __init__(self, crawler: Crawler):
         super().__init__(crawler)
+        enable_h2 = crawler.settings.getbool("PYREQWEST_HTTP2_ENABLED")
         builder: pyreqwest.client.ClientBuilder = (
             pyreqwest.client.ClientBuilder()
+            .http2(enable_h2)
             .follow_redirects(False)
             .default_cookie_store(False)
             .no_proxy()

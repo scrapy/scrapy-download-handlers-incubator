@@ -55,10 +55,11 @@ class NiquestsDownloadHandler(_Base):
         self._verify_certificates: bool = crawler.settings.getbool(
             "DOWNLOAD_VERIFY_CERTIFICATES"
         )
+        enable_h2 = crawler.settings.getbool("NIQUESTS_HTTP2_ENABLED")
         self._session = niquests.AsyncSession(
             headers={},
             source_address=self._bind_address,
-            disable_http2=True,
+            disable_http2=not enable_h2,
             disable_http3=True,
         )
         self._session.cookies = NullCookieJar()
@@ -143,7 +144,7 @@ class NiquestsDownloadHandler(_Base):
     async def _iter_body_chunks(
         response: niquests.AsyncResponse,
     ) -> AsyncIterator[bytes]:
-        async for chunk in await response.iter_raw():  # TODO
+        async for chunk in await response.iter_raw():
             yield chunk
 
     @staticmethod
