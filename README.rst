@@ -44,9 +44,9 @@ Enable it with:
 HttpxDownloadHandler
 --------------------
 
-This is a copy of the official
+This is an updated copy of the official
 ``scrapy.core.downloader.handlers._httpx.HttpxDownloadHandler`` handler. It
-supports HTTP/1.1 and HTTP/2 (with``HTTPX_HTTP2_ENABLED=True``) and uses the
+supports HTTP/1.1 and HTTP/2 (with ``HTTPX_HTTP2_ENABLED=True``) and uses the
 httpx_ library.
 
 Install it with:
@@ -69,8 +69,8 @@ Enable it with:
 NiquestsDownloadHandler
 -----------------------
 
-This handler supports HTTP/1.1 and HTTP/2 (with``NIQUESTS_HTTP2_ENABLED=True``)
-and uses the niquests_ library.
+This handler supports HTTP/1.1 and HTTP/2 (with
+``NIQUESTS_HTTP2_ENABLED=True``) and uses the niquests_ library.
 
 Install it with:
 
