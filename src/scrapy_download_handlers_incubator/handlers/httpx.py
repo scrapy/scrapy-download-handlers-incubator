@@ -54,6 +54,12 @@ class HttpxDownloadHandler(_Base):
                 verify=_make_ssl_context(crawler.settings),
                 local_address=self._get_bind_address_host(),
                 http2=enable_h2,
+                limits=httpx.Limits(
+                    # hard limit on simultaneous connections
+                    max_connections=self._pool_size_total,
+                    # total number of connections in the pool
+                    max_keepalive_connections=self._pool_size_total,
+                ),
             ),
         )
         # https://github.com/encode/httpx/discussions/1566

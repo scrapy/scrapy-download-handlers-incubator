@@ -61,6 +61,10 @@ class NiquestsDownloadHandler(_Base):
             source_address=self._bind_address,
             disable_http2=not enable_h2,
             disable_http3=True,
+            # number of host buckets in the pool
+            pool_connections=self._pool_size_total,
+            # number of connections per host in the pool
+            pool_maxsize=self._pool_size_per_host,
         )
         self._session.cookies = NullCookieJar()
         self._session.trust_env = False

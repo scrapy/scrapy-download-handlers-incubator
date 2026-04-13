@@ -45,7 +45,13 @@ class AiohttpDownloadHandler(_Base):
     def __init__(self, crawler: Crawler):
         super().__init__(crawler)
         self._ssl_context = _make_ssl_context(crawler.settings)
-        self._connector = aiohttp.TCPConnector(local_addr=self._bind_address)
+        self._connector = aiohttp.TCPConnector(
+            local_addr=self._bind_address,
+            # total number of connections in the pool
+            limit=self._pool_size_total,
+            # number of connections per host in the pool
+            limit_per_host=self._pool_size_per_host,
+        )
         self._session: aiohttp.ClientSession | None = None
 
     @staticmethod
