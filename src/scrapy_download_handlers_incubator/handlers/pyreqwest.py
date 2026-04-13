@@ -54,6 +54,10 @@ class PyreqwestDownloadHandler(_Base):
             .follow_redirects(False)
             .default_cookie_store(False)
             .no_proxy()
+            # hard limit on simultaneous connections
+            .max_connections(self._pool_size_total)
+            # number of connections per host in the pool
+            .pool_max_idle_per_host(self._pool_size_per_host)
             .gzip(False)
             .deflate(False)
             .brotli(False)
