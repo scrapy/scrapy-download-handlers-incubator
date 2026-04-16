@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import ipaddress
+import ssl
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
@@ -15,7 +17,7 @@ from scrapy.exceptions import (
     UnsupportedURLSchemeError,
 )
 from scrapy.http import Headers
-from scrapy.utils.ssl import _make_ssl_context
+from scrapy.utils.ssl import _log_sslobj_debug_info, _make_ssl_context
 
 from scrapy_download_handlers_incubator.handlers._base import (
     BaseIncubatorDownloadHandler,
@@ -23,7 +25,6 @@ from scrapy_download_handlers_incubator.handlers._base import (
 )
 
 if TYPE_CHECKING:
-    import ssl
     from collections.abc import AsyncIterator
 
     from scrapy import Request
@@ -131,8 +132,32 @@ class AiohttpDownloadHandler(_Base):
             "status": response.status,
             "url": request.url,
             "headers": headers,
+            "ip_address": AiohttpDownloadHandler._get_server_ip(response),
             "protocol": protocol_version,
         }
+
+    # Both _get_server_ip() and _log_tls_info() only work for large responses,
+    # where the connection is not closed right in ClientResponse.start().
+    # We can subclass ClientResponse to capture peername and ssl_object if we really want.
+    @staticmethod
+    def _get_server_ip(
+        response: aiohttp.ClientResponse,
+    ) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
+        conn = response.connection
+        if conn is None or conn.transport is None:
+            return None
+        peername = conn.transport.get_extra_info("peername")
+        if peername:
+            return ipaddress.ip_address(peername[0])
+        return None
+
+    def _log_tls_info(self, response: aiohttp.ClientResponse, request: Request) -> None:
+        conn = response.connection
+        if conn is None or conn.transport is None:
+            return
+        ssl_object = conn.transport.get_extra_info("ssl_object")
+        if isinstance(ssl_object, ssl.SSLObject):
+            _log_sslobj_debug_info(ssl_object)
 
     @staticmethod
     def _iter_body_chunks(response: aiohttp.ClientResponse) -> AsyncIterator[bytes]:
