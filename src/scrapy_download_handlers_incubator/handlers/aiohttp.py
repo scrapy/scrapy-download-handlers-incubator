@@ -77,7 +77,7 @@ class AiohttpDownloadHandler(_Base):
         self, request: Request, timeout: float
     ) -> AsyncIterator[aiohttp.ClientResponse]:
         try:
-            async with await self._session._request(
+            async with await self._session.request(
                 request.method,
                 request.url,
                 data=request.body,
