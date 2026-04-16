@@ -58,7 +58,7 @@ class TestHttp11(AiohttpDownloadHandlerMixin, TestHttp11Base):
 class TestHttps11(AiohttpDownloadHandlerMixin, TestHttps11Base):
     handler_supports_bindaddress_meta = False
 
-    @pytest.mark.skip(reason="TLS verbose logging is not implemented")
+    @pytest.mark.skip(reason="TLS verbose logging is not available for short responses")
     @coroutine_test
     async def test_tls_logging(
         self, mockserver: MockServer, caplog: pytest.LogCaptureFixture
@@ -98,7 +98,7 @@ class TestHttp11WithCrawler(TestHttpWithCrawlerBase):
             }
         }
 
-    @pytest.mark.skip(reason="response.ip_address is not implemented")
+    @pytest.mark.skip(reason="response.ip_address is not available for short responses")
     @coroutine_test
     async def test_response_ip_address(self, mockserver: MockServer) -> None:
         pass
@@ -112,7 +112,7 @@ class TestHttps11WithCrawler(TestHttp11WithCrawler):
     async def test_response_ssl_certificate(self, mockserver: MockServer) -> None:
         pass
 
-    @pytest.mark.skip(reason="response.ip_address is not implemented")
+    @pytest.mark.skip(reason="response.ip_address is not available for short responses")
     @coroutine_test
     async def test_response_ip_address(self, mockserver: MockServer) -> None:
         pass

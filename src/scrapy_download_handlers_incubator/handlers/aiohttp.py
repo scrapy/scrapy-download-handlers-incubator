@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import ipaddress
+import ssl
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
@@ -15,7 +17,7 @@ from scrapy.exceptions import (
     UnsupportedURLSchemeError,
 )
 from scrapy.http import Headers
-from scrapy.utils.ssl import _make_ssl_context
+from scrapy.utils.ssl import _log_sslobj_debug_info, _make_ssl_context
 
 from scrapy_download_handlers_incubator.handlers._base import (
     BaseIncubatorDownloadHandler,
@@ -44,15 +46,25 @@ else:
 class AiohttpDownloadHandler(_Base):
     def __init__(self, crawler: Crawler):
         super().__init__(crawler)
-        self._ssl_context = _make_ssl_context(crawler.settings)
-        self._connector = aiohttp.TCPConnector(
+        self._ssl_context: ssl.SSLContext = _make_ssl_context(crawler.settings)
+        connector = aiohttp.TCPConnector(
             local_addr=self._bind_address,
             # total number of connections in the pool
             limit=self._pool_size_total,
             # number of connections per host in the pool
             limit_per_host=self._pool_size_per_host,
         )
-        self._session: aiohttp.ClientSession | None = None
+        self._session: aiohttp.ClientSession = aiohttp.ClientSession(
+            connector=connector,
+            cookie_jar=aiohttp.DummyCookieJar(),
+            auto_decompress=False,
+            skip_auto_headers=(
+                "Accept",
+                "Accept-Encoding",
+                "Content-Type",
+                "User-Agent",
+            ),
+        )
 
     @staticmethod
     def _check_deps_installed() -> None:
@@ -61,29 +73,12 @@ class AiohttpDownloadHandler(_Base):
                 "AiohttpDownloadHandler requires the aiohttp library to be installed."
             )
 
-    def _get_session(self) -> aiohttp.ClientSession:
-        if self._session is None or self._session.closed:
-            self._session = aiohttp.ClientSession(
-                connector=self._connector,
-                connector_owner=False,
-                cookie_jar=aiohttp.DummyCookieJar(),
-                auto_decompress=False,
-                skip_auto_headers=(
-                    "Accept",
-                    "Accept-Encoding",
-                    "Content-Type",
-                    "User-Agent",
-                ),
-            )
-        return self._session
-
     @asynccontextmanager
     async def _make_request(
         self, request: Request, timeout: float
     ) -> AsyncIterator[aiohttp.ClientResponse]:
-        session = self._get_session()
         try:
-            async with await session._request(
+            async with await self._session.request(
                 request.method,
                 request.url,
                 data=request.body,
@@ -137,8 +132,32 @@ class AiohttpDownloadHandler(_Base):
             "status": response.status,
             "url": request.url,
             "headers": headers,
+            "ip_address": AiohttpDownloadHandler._get_server_ip(response),
             "protocol": protocol_version,
         }
+
+    # Both _get_server_ip() and _log_tls_info() only work for large responses,
+    # where the connection is not closed right in ClientResponse.start().
+    # We can subclass ClientResponse to capture peername and ssl_object if we really want.
+    @staticmethod
+    def _get_server_ip(
+        response: aiohttp.ClientResponse,
+    ) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
+        conn = response.connection
+        if conn is None or conn.transport is None:
+            return None
+        peername = conn.transport.get_extra_info("peername")
+        if peername:
+            return ipaddress.ip_address(peername[0])
+        return None
+
+    def _log_tls_info(self, response: aiohttp.ClientResponse, request: Request) -> None:
+        conn = response.connection
+        if conn is None or conn.transport is None:
+            return
+        ssl_object = conn.transport.get_extra_info("ssl_object")
+        if isinstance(ssl_object, ssl.SSLObject):
+            _log_sslobj_debug_info(ssl_object)
 
     @staticmethod
     def _iter_body_chunks(response: aiohttp.ClientResponse) -> AsyncIterator[bytes]:
@@ -149,7 +168,4 @@ class AiohttpDownloadHandler(_Base):
         return isinstance(exc, aiohttp.ClientPayloadError)
 
     async def close(self) -> None:
-        if self._session and not self._session.closed:
-            await self._session.close()
-        if not self._connector.closed:
-            await self._connector.close()
+        await self._session.close()
