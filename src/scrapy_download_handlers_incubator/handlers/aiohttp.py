@@ -23,6 +23,7 @@ from scrapy_download_handlers_incubator.handlers._base import (
 )
 
 if TYPE_CHECKING:
+    import ssl
     from collections.abc import AsyncIterator
 
     from scrapy import Request
@@ -44,15 +45,25 @@ else:
 class AiohttpDownloadHandler(_Base):
     def __init__(self, crawler: Crawler):
         super().__init__(crawler)
-        self._ssl_context = _make_ssl_context(crawler.settings)
-        self._connector = aiohttp.TCPConnector(
+        self._ssl_context: ssl.SSLContext = _make_ssl_context(crawler.settings)
+        connector = aiohttp.TCPConnector(
             local_addr=self._bind_address,
             # total number of connections in the pool
             limit=self._pool_size_total,
             # number of connections per host in the pool
             limit_per_host=self._pool_size_per_host,
         )
-        self._session: aiohttp.ClientSession | None = None
+        self._session: aiohttp.ClientSession = aiohttp.ClientSession(
+            connector=connector,
+            cookie_jar=aiohttp.DummyCookieJar(),
+            auto_decompress=False,
+            skip_auto_headers=(
+                "Accept",
+                "Accept-Encoding",
+                "Content-Type",
+                "User-Agent",
+            ),
+        )
 
     @staticmethod
     def _check_deps_installed() -> None:
@@ -61,29 +72,12 @@ class AiohttpDownloadHandler(_Base):
                 "AiohttpDownloadHandler requires the aiohttp library to be installed."
             )
 
-    def _get_session(self) -> aiohttp.ClientSession:
-        if self._session is None or self._session.closed:
-            self._session = aiohttp.ClientSession(
-                connector=self._connector,
-                connector_owner=False,
-                cookie_jar=aiohttp.DummyCookieJar(),
-                auto_decompress=False,
-                skip_auto_headers=(
-                    "Accept",
-                    "Accept-Encoding",
-                    "Content-Type",
-                    "User-Agent",
-                ),
-            )
-        return self._session
-
     @asynccontextmanager
     async def _make_request(
         self, request: Request, timeout: float
     ) -> AsyncIterator[aiohttp.ClientResponse]:
-        session = self._get_session()
         try:
-            async with await session._request(
+            async with await self._session._request(
                 request.method,
                 request.url,
                 data=request.body,
@@ -149,7 +143,4 @@ class AiohttpDownloadHandler(_Base):
         return isinstance(exc, aiohttp.ClientPayloadError)
 
     async def close(self) -> None:
-        if self._session and not self._session.closed:
-            await self._session.close()
-        if not self._connector.closed:
-            await self._connector.close()
+        await self._session.close()
