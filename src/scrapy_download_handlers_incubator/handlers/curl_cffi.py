@@ -62,16 +62,18 @@ class CurlCffiDownloadHandler(_Base):
             http_version = curl_cffi.const.CurlHttpVersion.V2TLS
         else:
             http_version = curl_cffi.const.CurlHttpVersion.V1_1
-        self._session: curl_cffi.AsyncSession = curl_cffi.AsyncSession(
-            interface=self._get_bind_address_host(),
-            allow_redirects=False,
-            discard_cookies=True,
-            trust_env=False,
-            verify=verify_certificates,
-            default_headers=False,
-            # hard limit on simultaneous connections
-            max_clients=self._pool_size_total,
-            http_version=http_version,
+        self._session: curl_cffi.AsyncSession[curl_cffi.Response] = (
+            curl_cffi.AsyncSession(
+                interface=self._get_bind_address_host(),
+                allow_redirects=False,
+                discard_cookies=True,
+                trust_env=False,
+                verify=verify_certificates,
+                default_headers=False,
+                # hard limit on simultaneous connections
+                max_clients=self._pool_size_total,
+                http_version=http_version,
+            )
         )
 
     @staticmethod
