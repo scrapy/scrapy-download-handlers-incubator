@@ -62,7 +62,7 @@ class CurlCffiDownloadHandler(_Base):
             http_version = curl_cffi.const.CurlHttpVersion.V2TLS
         else:
             http_version = curl_cffi.const.CurlHttpVersion.V1_1
-        self._session = curl_cffi.AsyncSession(
+        self._session: curl_cffi.AsyncSession = curl_cffi.AsyncSession(
             interface=self._get_bind_address_host(),
             allow_redirects=False,
             discard_cookies=True,
