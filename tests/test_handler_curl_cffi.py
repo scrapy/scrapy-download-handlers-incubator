@@ -69,7 +69,7 @@ class TestHttps2(TestHttps11):
     HTTP2_DATALOSS_SKIP_REASON = "Content-Length mismatch raises InvalidBodyLengthError"
 
     default_handler_settings: ClassVar[dict[str, Any]] = {
-        "CURL_CFFI_HTTP2_ENABLED": True,
+        "CURL_CFFI_HTTP_VERSION": "v2",
     }
 
     @coroutine_test
