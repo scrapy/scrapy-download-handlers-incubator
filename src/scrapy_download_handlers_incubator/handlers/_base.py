@@ -71,6 +71,7 @@ class BaseIncubatorDownloadHandler(BaseHttpDownloadHandler, ABC, Generic[_Respon
         self._bind_address = normalize_bind_address(
             crawler.settings.get("DOWNLOAD_BIND_ADDRESS")
         )
+        # these are useful for many handlers but used in different ways by them
         self._pool_size_total: int = crawler.settings.getint("CONCURRENT_REQUESTS")
         self._pool_size_per_host: int = crawler.settings.getint(
             "CONCURRENT_REQUESTS_PER_DOMAIN"
