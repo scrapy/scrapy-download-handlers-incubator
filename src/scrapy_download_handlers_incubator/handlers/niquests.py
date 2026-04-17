@@ -131,8 +131,9 @@ class NiquestsDownloadHandler(_Base):
         protocol = None
         if response.conn_info.http_version:
             protocol = response.conn_info.http_version.value
+        assert response.status_code is not None
         return {
-            "status": response.status_code or 0,
+            "status": response.status_code,
             "url": request.url,
             "headers": headers,
             "ip_address": ip_address,
