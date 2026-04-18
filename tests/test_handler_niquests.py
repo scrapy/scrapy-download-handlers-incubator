@@ -13,6 +13,7 @@ from tests.test_handlers_base import (
     TestHttpsInvalidDNSPatternBase,
     TestHttpsWrongHostnameBase,
     TestHttpWithCrawlerBase,
+    TestMitmProxyBase,
     TestSimpleHttpsBase,
 )
 from tests.utils.decorators import coroutine_test
@@ -34,6 +35,9 @@ class NiquestsDownloadHandlerMixin:
         )
 
         return NiquestsDownloadHandler
+
+
+HANDLER_IMPORT_NAME = "scrapy_download_handlers_incubator.NiquestsDownloadHandler"
 
 
 class TestHttp11(NiquestsDownloadHandlerMixin, TestHttp11Base):
@@ -109,8 +113,8 @@ class TestHttp11WithCrawler(TestHttpWithCrawlerBase):
     def settings_dict(self) -> dict[str, Any] | None:
         return {
             "DOWNLOAD_HANDLERS": {
-                "http": "scrapy_download_handlers_incubator.NiquestsDownloadHandler",
-                "https": "scrapy_download_handlers_incubator.NiquestsDownloadHandler",
+                "http": HANDLER_IMPORT_NAME,
+                "https": HANDLER_IMPORT_NAME,
             }
         }
 
@@ -136,3 +140,14 @@ class TestHttps11Proxy(NiquestsDownloadHandlerMixin, TestHttpProxyBase):
     @pytest.mark.skip(reason="Hangs, as the test is hacky")
     def test_download_with_proxy_https_timeout(self) -> None:  # type: ignore[override]
         pass
+
+
+class TestMitmProxy(TestMitmProxyBase):
+    @property
+    def settings_dict(self) -> dict[str, Any] | None:
+        return {
+            "DOWNLOAD_HANDLERS": {
+                "http": HANDLER_IMPORT_NAME,
+                "https": HANDLER_IMPORT_NAME,
+            }
+        }

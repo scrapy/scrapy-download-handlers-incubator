@@ -37,6 +37,9 @@ class PyreqwestDownloadHandlerMixin:
         return PyreqwestDownloadHandler
 
 
+HANDLER_IMPORT_NAME = "scrapy_download_handlers_incubator.PyreqwestDownloadHandler"
+
+
 class TestHttp11(PyreqwestDownloadHandlerMixin, TestHttp11Base):
     handler_supports_bindaddress_meta = False
     always_present_req_headers = frozenset({"Accept", "User-Agent"})
@@ -136,8 +139,8 @@ class TestHttp11WithCrawler(TestHttpWithCrawlerBase):
     def settings_dict(self) -> dict[str, Any] | None:
         return {
             "DOWNLOAD_HANDLERS": {
-                "http": "scrapy_download_handlers_incubator.PyreqwestDownloadHandler",
-                "https": "scrapy_download_handlers_incubator.PyreqwestDownloadHandler",
+                "http": HANDLER_IMPORT_NAME,
+                "https": HANDLER_IMPORT_NAME,
             }
         }
 

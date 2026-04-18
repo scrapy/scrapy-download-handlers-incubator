@@ -13,6 +13,7 @@ from tests.test_handlers_base import (
     TestHttpsInvalidDNSPatternBase,
     TestHttpsWrongHostnameBase,
     TestHttpWithCrawlerBase,
+    TestMitmProxyBase,
     TestSimpleHttpsBase,
 )
 from tests.utils.decorators import coroutine_test
@@ -34,6 +35,9 @@ class AiohttpDownloadHandlerMixin:
         )
 
         return AiohttpDownloadHandler
+
+
+HANDLER_IMPORT_NAME = "scrapy_download_handlers_incubator.AiohttpDownloadHandler"
 
 
 class TestHttp11(AiohttpDownloadHandlerMixin, TestHttp11Base):
@@ -78,8 +82,8 @@ class TestHttp11WithCrawler(TestHttpWithCrawlerBase):
     def settings_dict(self) -> dict[str, Any] | None:
         return {
             "DOWNLOAD_HANDLERS": {
-                "http": "scrapy_download_handlers_incubator.AiohttpDownloadHandler",
-                "https": "scrapy_download_handlers_incubator.AiohttpDownloadHandler",
+                "http": HANDLER_IMPORT_NAME,
+                "https": HANDLER_IMPORT_NAME,
             }
         }
 
@@ -109,3 +113,14 @@ class TestHttp11Proxy(AiohttpDownloadHandlerMixin, TestHttpProxyBase):
 
 class TestHttps11Proxy(AiohttpDownloadHandlerMixin, TestHttpProxyBase):
     is_secure = True
+
+
+class TestMitmProxy(TestMitmProxyBase):
+    @property
+    def settings_dict(self) -> dict[str, Any] | None:
+        return {
+            "DOWNLOAD_HANDLERS": {
+                "http": HANDLER_IMPORT_NAME,
+                "https": HANDLER_IMPORT_NAME,
+            }
+        }

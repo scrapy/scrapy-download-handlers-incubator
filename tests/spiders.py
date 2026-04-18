@@ -120,3 +120,14 @@ class HeadersReceivedErrbackSpider(HeadersReceivedCallbackSpider):
     def headers_received(self, headers, body_length, request, spider):
         self.meta["headers_received"] = headers
         raise StopDownload(fail=True)
+
+
+class SimpleSpider(MetaSpider):
+    name = "simple"
+
+    def __init__(self, url, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.start_urls = [url]
+
+    def parse(self, response):
+        self.logger.info(f"Got response {response.status}")

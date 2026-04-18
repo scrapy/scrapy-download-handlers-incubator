@@ -15,6 +15,7 @@ from tests.test_handlers_base import (
     TestHttpsInvalidDNSPatternBase,
     TestHttpsWrongHostnameBase,
     TestHttpWithCrawlerBase,
+    TestMitmProxyBase,
     TestSimpleHttpsBase,
 )
 from tests.utils.decorators import coroutine_test
@@ -37,6 +38,9 @@ class HttpxDownloadHandlerMixin:
         )
 
         return HttpxDownloadHandler
+
+
+HANDLER_IMPORT_NAME = "scrapy_download_handlers_incubator.HttpxDownloadHandler"
 
 
 class TestHttp11(HttpxDownloadHandlerMixin, TestHttp11Base):
@@ -122,8 +126,8 @@ class TestHttp11WithCrawler(TestHttpWithCrawlerBase):
     def settings_dict(self) -> dict[str, Any] | None:
         return {
             "DOWNLOAD_HANDLERS": {
-                "http": "scrapy_download_handlers_incubator.HttpxDownloadHandler",
-                "https": "scrapy_download_handlers_incubator.HttpxDownloadHandler",
+                "http": HANDLER_IMPORT_NAME,
+                "https": HANDLER_IMPORT_NAME,
             }
         }
 
@@ -144,3 +148,14 @@ class TestHttp11Proxy(HttpxDownloadHandlerMixin, TestHttpProxyBase):
 class TestHttps11Proxy(HttpxDownloadHandlerMixin, TestHttpProxyBase):
     is_secure = True
     expected_http_proxy_request_body = TestHttp11Proxy.expected_http_proxy_request_body
+
+
+class TestMitmProxy(TestMitmProxyBase):
+    @property
+    def settings_dict(self) -> dict[str, Any] | None:
+        return {
+            "DOWNLOAD_HANDLERS": {
+                "http": HANDLER_IMPORT_NAME,
+                "https": HANDLER_IMPORT_NAME,
+            }
+        }

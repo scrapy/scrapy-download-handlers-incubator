@@ -1,50 +1,19 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import TYPE_CHECKING, Any, ParamSpec
+from typing import TYPE_CHECKING, ParamSpec
 
 import pytest
-from scrapy.utils.defer import deferred_from_coro, deferred_to_future
+from scrapy.utils.defer import deferred_from_coro
 from scrapy.utils.reactor import is_reactor_installed
-from twisted.internet.defer import Deferred, inlineCallbacks
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Generator
+    from collections.abc import Awaitable, Callable
+
+    from twisted.internet.defer import Deferred
 
 
 _P = ParamSpec("_P")
-
-
-def inline_callbacks_test(
-    f: Callable[_P, Generator[Deferred[Any], Any, None]],
-) -> Callable[_P, Awaitable[None]]:
-    """Mark a test function written in a :func:`twisted.internet.defer.inlineCallbacks` style.
-
-    This calls :func:`twisted.internet.defer.inlineCallbacks` and then:
-
-    * with ``pytest-twisted`` this returns the resulting Deferred
-    * with ``pytest-asyncio`` this converts the resulting Deferred into a
-      coroutine
-    """
-
-    if not is_reactor_installed():
-
-        @pytest.mark.asyncio
-        @wraps(f)
-        async def wrapper_coro(*args: _P.args, **kwargs: _P.kwargs) -> None:
-            await deferred_to_future(inlineCallbacks(f)(*args, **kwargs))
-
-        # Likely https://github.com/python/mypy/issues/17171
-        return wrapper_coro  # type: ignore[no-any-return]
-
-    @wraps(f)
-    @inlineCallbacks
-    def wrapper_dfd(
-        *args: _P.args, **kwargs: _P.kwargs
-    ) -> Generator[Deferred[Any], Any, None]:
-        return f(*args, **kwargs)
-
-    return wrapper_dfd
 
 
 def coroutine_test(

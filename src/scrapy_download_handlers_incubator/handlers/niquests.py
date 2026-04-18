@@ -106,11 +106,11 @@ class NiquestsDownloadHandler(_Base):
     async def _make_request(
         self, request: Request, timeout: float
     ) -> AsyncIterator[niquests.AsyncResponse]:
+        proxy = self._extract_proxy_url_with_creds(request)
         headers = request.headers.to_unicode_dict()
         for k in list(headers):
             if headers[k] == "":
                 del headers[k]
-        proxy = self._extract_proxy_url_with_creds(request)
         proxies = {"http": proxy, "https": proxy} if proxy else None
         try:
             async with await self._session.request(

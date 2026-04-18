@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import gzip
 import json
+import logging
+import os
 import re
 import sys
 from abc import ABC, abstractmethod
@@ -40,10 +42,12 @@ from tests.spiders import (
     BytesReceivedErrbackSpider,
     HeadersReceivedCallbackSpider,
     HeadersReceivedErrbackSpider,
+    SimpleSpider,
     SingleRequestSpider,
 )
 from tests.utils import NON_EXISTING_RESOLVABLE
 from tests.utils.decorators import coroutine_test
+from tests.utils.proxy import MitmProxy, wrong_credentials
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Generator
@@ -1093,3 +1097,63 @@ class TestHttpProxyBase(ABC):
         assert response.status == 200
         assert response.url == request.url
         assert response.body == self.expected_http_proxy_request_body
+
+
+class TestMitmProxyBase(ABC):
+    @property
+    @abstractmethod
+    def settings_dict(self) -> dict[str, Any] | None:
+        raise NotImplementedError
+
+    is_secure = False
+
+    @coroutine_test
+    async def test_https_connect_tunnel(
+        self,
+        caplog: pytest.LogCaptureFixture,
+        mockserver: MockServer,
+        mitm_proxy_server: MitmProxy,
+    ) -> None:
+        crawler = get_crawler(SimpleSpider, self.settings_dict)
+        with caplog.at_level(logging.DEBUG):
+            await crawler.crawl_async(mockserver.url("/status?n=200", is_secure=True))
+        self._assert_got_response_code(200, caplog.text)
+
+    @coroutine_test
+    async def test_https_tunnel_auth_error(
+        self,
+        caplog: pytest.LogCaptureFixture,
+        mockserver: MockServer,
+        mitm_proxy_server: MitmProxy,
+    ) -> None:
+        os.environ["https_proxy"] = wrong_credentials(os.environ["https_proxy"])
+        crawler = get_crawler(SimpleSpider, self.settings_dict)
+        with caplog.at_level(logging.DEBUG):
+            await crawler.crawl_async(mockserver.url("/status?n=200", is_secure=True))
+        # The proxy returns a 407 error code but it does not reach the client;
+        # he just sees an exception.
+        self._assert_got_auth_exception(caplog.text)
+
+    @coroutine_test
+    async def test_https_tunnel_without_leak_proxy_authorization_header(
+        self,
+        caplog: pytest.LogCaptureFixture,
+        mockserver: MockServer,
+        mitm_proxy_server: MitmProxy,
+    ) -> None:
+        request = Request(mockserver.url("/echo", is_secure=True))
+        crawler = get_crawler(SingleRequestSpider, self.settings_dict)
+        with caplog.at_level(logging.DEBUG):
+            await crawler.crawl_async(seed=request)
+        assert isinstance(crawler.spider, SingleRequestSpider)
+        self._assert_got_response_code(200, caplog.text)
+        echo = json.loads(crawler.spider.meta["responses"][0].text)
+        assert "Proxy-Authorization" not in echo["headers"]
+
+    @staticmethod
+    def _assert_got_response_code(code: int, log: str) -> None:
+        assert str(log).count(f"Crawled ({code})") == 1
+
+    @staticmethod
+    def _assert_got_auth_exception(log: str) -> None:
+        assert "Proxy Authentication Required" in log or "407" in log
