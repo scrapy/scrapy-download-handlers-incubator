@@ -8,7 +8,6 @@ from scrapy import Request
 
 from tests.test_handlers_base import (
     TestHttp11Base,
-    TestHttpProxyBase,
     TestHttps11Base,
     TestHttpsInvalidDNSIdBase,
     TestHttpsInvalidDNSPatternBase,
@@ -159,11 +158,7 @@ class TestHttps11WithCrawler(TestHttp11WithCrawler):
         pass
 
 
-@pytest.mark.skip(reason="Proxy support is not implemented yet")
-class TestHttp11Proxy(PyreqwestDownloadHandlerMixin, TestHttpProxyBase):
-    pass
-
-
-@pytest.mark.skip(reason="Proxy support is not implemented yet")
-class TestHttps11Proxy(PyreqwestDownloadHandlerMixin, TestHttpProxyBase):
-    is_secure = True
+# Proxies aren't supported
+# class TestHttp11Proxy
+# class TestHttps11Proxy
+# class TestMitmProxy

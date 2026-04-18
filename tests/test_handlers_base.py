@@ -1144,13 +1144,14 @@ class TestMitmProxyBase(ABC):
     async def test_http_proxy_auth_error(
         self,
         caplog: pytest.LogCaptureFixture,
+        monkeypatch: pytest.MonkeyPatch,
         mockserver: MockServer,
         mitm_proxy_server: MitmProxy,
         https_dest: bool,
     ) -> None:
         """HTTP proxy, HTTP or HTTPS destination, wrong proxy creds."""
         envvar = "https_proxy" if https_dest else "http_proxy"
-        os.environ[envvar] = wrong_credentials(os.environ[envvar])
+        monkeypatch.setenv(envvar, wrong_credentials(os.environ[envvar]))
         crawler = get_crawler(SimpleSpider, self.settings_dict)
         with caplog.at_level(logging.DEBUG):
             await crawler.crawl_async(

@@ -18,7 +18,7 @@ from mitmproxy.tools.main import mitmdump
 sys.argv[0] = "mitmdump"
 sys.exit(mitmdump())
         """
-        cert_path = Path(__file__).parent.resolve() / "keys"
+        cert_path = Path(__file__).parent.parent.resolve() / "keys"
         args = [
             "--listen-host",
             "127.0.0.1",

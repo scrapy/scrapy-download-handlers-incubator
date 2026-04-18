@@ -39,8 +39,6 @@ try:
     import niquests.adapters
     import niquests.exceptions
     import urllib3.exceptions
-
-
 except ImportError:
     niquests = None  # type: ignore[assignment]
 
@@ -74,7 +72,9 @@ class NiquestsDownloadHandler(_Base):
         self._session.cookies = NullCookieJar()
         self._session.trust_env = False
         if not self._verify_certificates:
-            # ugly hack to skip proxy certificate verification, may be not worth it
+            # Ugly hack to skip proxy certificate verification, may be not worth it.
+            # The official docs suggest passing the CA bundle via an envvar but that
+            # doesn't work with trust_env=False.
             orig_proxy_manager_for = (
                 niquests.adapters.AsyncHTTPAdapter.proxy_manager_for
             )
@@ -85,7 +85,6 @@ class NiquestsDownloadHandler(_Base):
                 **proxy_kwargs: Any,
             ) -> urllib3.AsyncProxyManager:
                 proxy_ctx = make_insecure_ssl_ctx()
-                proxy_kwargs["proxy_ssl_context"] = proxy_ctx
                 proxy_kwargs["ssl_context"] = proxy_ctx
                 return orig_proxy_manager_for(self_, proxy, **proxy_kwargs)  # type: ignore[no-any-return]
 
