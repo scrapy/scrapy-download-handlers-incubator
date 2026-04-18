@@ -8,7 +8,6 @@ from scrapy import Request
 
 from tests.test_handlers_base import (
     TestHttp11Base,
-    TestHttpProxyBase,
     TestHttps11Base,
     TestHttpsInvalidDNSIdBase,
     TestHttpsInvalidDNSPatternBase,
@@ -35,6 +34,9 @@ class PyreqwestDownloadHandlerMixin:
         )
 
         return PyreqwestDownloadHandler
+
+
+HANDLER_IMPORT_NAME = "scrapy_download_handlers_incubator.PyreqwestDownloadHandler"
 
 
 class TestHttp11(PyreqwestDownloadHandlerMixin, TestHttp11Base):
@@ -136,8 +138,8 @@ class TestHttp11WithCrawler(TestHttpWithCrawlerBase):
     def settings_dict(self) -> dict[str, Any] | None:
         return {
             "DOWNLOAD_HANDLERS": {
-                "http": "scrapy_download_handlers_incubator.PyreqwestDownloadHandler",
-                "https": "scrapy_download_handlers_incubator.PyreqwestDownloadHandler",
+                "http": HANDLER_IMPORT_NAME,
+                "https": HANDLER_IMPORT_NAME,
             }
         }
 
@@ -156,11 +158,7 @@ class TestHttps11WithCrawler(TestHttp11WithCrawler):
         pass
 
 
-@pytest.mark.skip(reason="Proxy support is not implemented yet")
-class TestHttp11Proxy(PyreqwestDownloadHandlerMixin, TestHttpProxyBase):
-    pass
-
-
-@pytest.mark.skip(reason="Proxy support is not implemented yet")
-class TestHttps11Proxy(PyreqwestDownloadHandlerMixin, TestHttpProxyBase):
-    is_secure = True
+# Proxies aren't supported
+# class TestHttp11Proxy
+# class TestHttps11Proxy
+# class TestMitmProxy

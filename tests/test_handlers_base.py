@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import gzip
 import json
+import logging
+import os
 import re
 import sys
 from abc import ABC, abstractmethod
@@ -40,10 +42,12 @@ from tests.spiders import (
     BytesReceivedErrbackSpider,
     HeadersReceivedCallbackSpider,
     HeadersReceivedErrbackSpider,
+    SimpleSpider,
     SingleRequestSpider,
 )
 from tests.utils import NON_EXISTING_RESOLVABLE
 from tests.utils.decorators import coroutine_test
+from tests.utils.proxy import MitmProxy, wrong_credentials
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Generator
@@ -1043,6 +1047,10 @@ class TestHttpProxyBase(ABC):
         finally:
             await dh.close()
 
+    @staticmethod
+    def handler_supports_tls_in_tls() -> bool:
+        return True
+
     @coroutine_test
     async def test_download_with_proxy(
         self, proxy_mockserver: ProxyEchoMockServer
@@ -1074,6 +1082,8 @@ class TestHttpProxyBase(ABC):
     ) -> None:
         if NON_EXISTING_RESOLVABLE:
             pytest.skip("Non-existing hosts are resolvable")
+        if self.is_secure and not self.handler_supports_tls_in_tls():
+            pytest.skip("HTTPS proxy to HTTPS destination is not supported")
         http_proxy = proxy_mockserver.url("", is_secure=self.is_secure)
         domain = "https://no-such-domain.nosuch"
         request = Request(domain, meta={"proxy": http_proxy, "download_timeout": 0.2})
@@ -1093,3 +1103,100 @@ class TestHttpProxyBase(ABC):
         assert response.status == 200
         assert response.url == request.url
         assert response.body == self.expected_http_proxy_request_body
+
+
+class TestMitmProxyBase(ABC):
+    @property
+    @abstractmethod
+    def settings_dict(self) -> dict[str, Any] | None:
+        raise NotImplementedError
+
+    @staticmethod
+    def handler_supports_tls_in_tls() -> bool:
+        return True
+
+    @pytest.mark.parametrize("https_dest", [True, False])
+    @coroutine_test
+    async def test_http_proxy(
+        self,
+        caplog: pytest.LogCaptureFixture,
+        mockserver: MockServer,
+        mitm_proxy_server: MitmProxy,
+        https_dest: bool,
+    ) -> None:
+        """HTTP proxy, HTTP or HTTPS destination."""
+        crawler = get_crawler(SimpleSpider, self.settings_dict)
+        with caplog.at_level(logging.DEBUG):
+            await crawler.crawl_async(
+                mockserver.url("/status?n=200", is_secure=https_dest)
+            )
+        self._assert_got_response_code(200, caplog.text)
+
+    @pytest.mark.parametrize("https_dest", [True, False])
+    @coroutine_test
+    async def test_https_proxy(
+        self,
+        caplog: pytest.LogCaptureFixture,
+        mockserver: MockServer,
+        mitm_proxy_server_https: MitmProxy,
+        https_dest: bool,
+    ) -> None:
+        """HTTPS proxy, HTTP or HTTPS destination."""
+        if https_dest and not self.handler_supports_tls_in_tls():
+            pytest.skip("HTTPS proxy to HTTPS destination is not supported")
+        crawler = get_crawler(SimpleSpider, self.settings_dict)
+        with caplog.at_level(logging.DEBUG):
+            await crawler.crawl_async(
+                mockserver.url("/status?n=200", is_secure=https_dest)
+            )
+        self._assert_got_response_code(200, caplog.text)
+
+    @pytest.mark.parametrize("https_dest", [True, False])
+    @coroutine_test
+    async def test_http_proxy_auth_error(
+        self,
+        caplog: pytest.LogCaptureFixture,
+        monkeypatch: pytest.MonkeyPatch,
+        mockserver: MockServer,
+        mitm_proxy_server: MitmProxy,
+        https_dest: bool,
+    ) -> None:
+        """HTTP proxy, HTTP or HTTPS destination, wrong proxy creds."""
+        envvar = "https_proxy" if https_dest else "http_proxy"
+        monkeypatch.setenv(envvar, wrong_credentials(os.environ[envvar]))
+        crawler = get_crawler(SimpleSpider, self.settings_dict)
+        with caplog.at_level(logging.DEBUG):
+            await crawler.crawl_async(
+                mockserver.url("/status?n=200", is_secure=https_dest)
+            )
+        # The proxy returns a 407 error code but it does not reach the client;
+        # he just sees an exception.
+        self._assert_got_auth_exception(caplog.text)
+
+    @pytest.mark.parametrize("https_dest", [True, False])
+    @coroutine_test
+    async def test_dont_leak_proxy_authorization_header(
+        self,
+        caplog: pytest.LogCaptureFixture,
+        mockserver: MockServer,
+        mitm_proxy_server: MitmProxy,
+        https_dest: bool,
+    ) -> None:
+        """HTTP proxy, HTTP or HTTPS destination. Check that the auth header
+        is not sent to the destination."""
+        request = Request(mockserver.url("/echo", is_secure=https_dest))
+        crawler = get_crawler(SingleRequestSpider, self.settings_dict)
+        with caplog.at_level(logging.DEBUG):
+            await crawler.crawl_async(seed=request)
+        assert isinstance(crawler.spider, SingleRequestSpider)
+        self._assert_got_response_code(200, caplog.text)
+        echo = json.loads(crawler.spider.meta["responses"][0].text)
+        assert "Proxy-Authorization" not in echo["headers"]
+
+    @staticmethod
+    def _assert_got_response_code(code: int, log: str) -> None:
+        assert str(log).count(f"Crawled ({code})") == 1
+
+    @staticmethod
+    def _assert_got_auth_exception(log: str) -> None:
+        assert "Proxy Authentication Required" in log or "407" in log

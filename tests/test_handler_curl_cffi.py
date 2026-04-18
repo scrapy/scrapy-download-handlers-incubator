@@ -13,6 +13,7 @@ from tests.test_handlers_base import (
     TestHttpsInvalidDNSPatternBase,
     TestHttpsWrongHostnameBase,
     TestHttpWithCrawlerBase,
+    TestMitmProxyBase,
     TestSimpleHttpsBase,
 )
 from tests.utils.decorators import coroutine_test
@@ -36,22 +37,15 @@ class CurlCffiDownloadHandlerMixin:
         return CurlCffiDownloadHandler
 
 
+HANDLER_IMPORT_NAME = "scrapy_download_handlers_incubator.CurlCffiDownloadHandler"
+
+
 class TestHttp11(CurlCffiDownloadHandlerMixin, TestHttp11Base):
     handler_supports_bindaddress_meta = False
-    # handler_merges_resp_headers = True
-
-    @coroutine_test
-    async def test_unsupported_proxy(self, mockserver: MockServer) -> None:
-        meta = {"proxy": "127.0.0.2"}
-        request = Request(mockserver.url("/text"), meta=meta)
-        async with self.get_dh() as download_handler:
-            with pytest.raises(NotImplementedError, match="doesn't support proxies"):
-                await download_handler.download_request(request)
 
 
 class TestHttps11(CurlCffiDownloadHandlerMixin, TestHttps11Base):
     handler_supports_bindaddress_meta = False
-    # handler_merges_resp_headers = True
 
     @pytest.mark.skip(reason="TLS verbose logging is not implemented")
     @coroutine_test
@@ -118,8 +112,8 @@ class TestHttp11WithCrawler(TestHttpWithCrawlerBase):
     def settings_dict(self) -> dict[str, Any] | None:
         return {
             "DOWNLOAD_HANDLERS": {
-                "http": "scrapy_download_handlers_incubator.CurlCffiDownloadHandler",
-                "https": "scrapy_download_handlers_incubator.CurlCffiDownloadHandler",
+                "http": HANDLER_IMPORT_NAME,
+                "https": HANDLER_IMPORT_NAME,
             }
         }
 
@@ -133,11 +127,21 @@ class TestHttps11WithCrawler(TestHttp11WithCrawler):
         pass
 
 
-@pytest.mark.skip(reason="Proxy support is not implemented yet")
 class TestHttp11Proxy(CurlCffiDownloadHandlerMixin, TestHttpProxyBase):
-    pass
+    expected_http_proxy_request_body = b"http://example.com/"
 
 
-@pytest.mark.skip(reason="Proxy support is not implemented yet")
 class TestHttps11Proxy(CurlCffiDownloadHandlerMixin, TestHttpProxyBase):
     is_secure = True
+    expected_http_proxy_request_body = TestHttp11Proxy.expected_http_proxy_request_body
+
+
+class TestMitmProxy(TestMitmProxyBase):
+    @property
+    def settings_dict(self) -> dict[str, Any] | None:
+        return {
+            "DOWNLOAD_HANDLERS": {
+                "http": HANDLER_IMPORT_NAME,
+                "https": HANDLER_IMPORT_NAME,
+            }
+        }
