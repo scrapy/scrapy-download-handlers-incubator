@@ -87,13 +87,15 @@ Enable it with:
 Features and limitations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-| Proxies: Yes (HTTPS proxies for HTTPS destinations are not supported on Python < 3.11)
-| HTTP/2: No (not supported by the library)
-| TLS verbose logging: Partial (skipped for small responses)
-| ``response.ip_address``: Partial (skipped for small responses)
-| ``response.certificate``: No (not implemented)
-| Per-request ``bindaddress``: No (not supported by the library)
-| Proxy certificate verification: Follows ``DOWNLOAD_VERIFY_CERTIFICATES``
+============================== =============================================================================
+Proxies                        Yes (HTTPS proxies for HTTPS destinations are not supported on Python < 3.11)
+HTTP/2                         No (not supported by the library)
+TLS verbose logging            Partial (skipped for small responses)
+``response.ip_address``        Partial (skipped for small responses)
+``response.certificate``       No (not implemented)
+Per-request ``bindaddress``    No (not supported by the library)
+Proxy certificate verification Follows ``DOWNLOAD_VERIFY_CERTIFICATES``
+============================== =============================================================================
 
 Notable features supported by the library but not implemented:
 
@@ -125,14 +127,16 @@ Enable it with:
 Features and limitations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-| Proxies: Yes
-| HTTP/2: Yes
-| HTTP/3: Yes (but not tested)
-| TLS verbose logging: No (not supported by the library)
-| ``response.ip_address``: Yes
-| ``response.certificate``: No (not supported by the library)
-| Per-request ``bindaddress``: No (not supported by the library)
-| Proxy certificate verification: Follows ``DOWNLOAD_VERIFY_CERTIFICATES``
+============================== ========================================
+Proxies                        Yes
+HTTP/2                         Yes
+HTTP/3                         Yes (but not tested)
+TLS verbose logging            No (not supported by the library)
+``response.ip_address``        Yes
+``response.certificate``       No (not supported by the library)
+Per-request ``bindaddress``    No (not supported by the library)
+Proxy certificate verification Follows ``DOWNLOAD_VERIFY_CERTIFICATES``
+============================== ========================================
 
 Notable features supported by the library but not implemented:
 
@@ -178,19 +182,22 @@ Enable it with:
 Features and limitations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-| Proxies: Yes (separate connection pool per proxy)
-| HTTP/2: Yes
-| HTTP/3: No (not supported by the library)
-| TLS verbose logging: Yes
-| ``response.ip_address``: Yes
-| ``response.certificate``: No (not implemented)
-| Per-request ``bindaddress``: No (not supported by the library)
-| Proxy certificate verification: Follows ``DOWNLOAD_VERIFY_CERTIFICATES``
+============================== ========================================
+Proxies                        Yes (separate connection pool per proxy)
+HTTP/2                         Yes
+HTTP/3                         No (not supported by the library)
+TLS verbose logging            Yes
+``response.ip_address``        Yes
+``response.certificate``       No (not implemented)
+Per-request ``bindaddress``    No (not supported by the library)
+Proxy certificate verification Follows ``DOWNLOAD_VERIFY_CERTIFICATES``
+============================== ========================================
 
 Notable features supported by the library but not implemented:
 
 * SOCKS5 proxies
 * Alternative transports
+* Limiting the number of per-proxy connection pool to save resources
 
 Settings
 ^^^^^^^^
@@ -223,14 +230,16 @@ Enable it with:
 Features and limitations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-| Proxies: Yes
-| HTTP/2: Yes
-| HTTP/3: No (not implemented)
-| TLS verbose logging: Yes
-| ``response.ip_address``: Yes
-| ``response.certificate``: No (not implemented)
-| Per-request ``bindaddress``: No (not supported by the library)
-| Proxy certificate verification: Follows ``DOWNLOAD_VERIFY_CERTIFICATES``
+============================== ========================================
+Proxies                        Yes
+HTTP/2                         Yes
+HTTP/3                         No (not implemented)
+TLS verbose logging            Yes
+``response.ip_address``        Yes
+``response.certificate``       No (not implemented)
+Per-request ``bindaddress``    No (not supported by the library)
+Proxy certificate verification Follows ``DOWNLOAD_VERIFY_CERTIFICATES``
+============================== ========================================
 
 Notable features supported by the library but not implemented:
 
@@ -269,13 +278,15 @@ Enable it with:
 Features and limitations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-| Proxies: No (not supported by the library)
-| HTTP/2: Yes
-| HTTP/3: No (not supported by the library)
-| TLS verbose logging: No (not supported by the library)
-| ``response.ip_address``: No (not supported by the library)
-| ``response.certificate``: No (not supported by the library)
-| Per-request ``bindaddress``: No (not supported by the library)
+=========================== =================================
+Proxies                     No (not supported by the library)
+HTTP/2                      Yes
+HTTP/3                      No (not supported by the library)
+TLS verbose logging         No (not supported by the library)
+``response.ip_address``     No (not supported by the library)
+``response.certificate``    No (not supported by the library)
+Per-request ``bindaddress`` No (not supported by the library)
+=========================== =================================
 
 Notable features supported by the library but not implemented:
 
