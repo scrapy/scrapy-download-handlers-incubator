@@ -79,6 +79,12 @@ class TestHttps2(TestHttps11):
     @pytest.mark.skip(
         reason="InvalidBodyLengthError can be raised before reading the body"
     )
+    def test_download_cause_data_loss(self) -> None:  # type: ignore[override]
+        pass
+
+    @pytest.mark.skip(
+        reason="InvalidBodyLengthError can be raised before reading the body"
+    )
     def test_download_allow_data_loss_broken(self) -> None:  # type: ignore[override]
         pass
 
