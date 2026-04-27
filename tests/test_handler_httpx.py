@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import pytest
 from scrapy import Request
+from scrapy.exceptions import DownloadFailedError
 
 from tests.test_handlers_base import (
     TestHttp11Base,
@@ -91,6 +92,13 @@ class TestHttps2(TestHttps11):
         async with self.get_dh() as download_handler:
             response = await download_handler.download_request(request)
         assert response.protocol == "HTTP/2"
+
+    @coroutine_test
+    async def test_data_loss_handling(self, mockserver: MockServer) -> None:
+        request = Request(mockserver.url("/broken", is_secure=self.is_secure))
+        async with self.get_dh() as download_handler:
+            with pytest.raises(DownloadFailedError):
+                await download_handler.download_request(request)
 
 
 class TestSimpleHttps(HttpxDownloadHandlerMixin, TestSimpleHttpsBase):

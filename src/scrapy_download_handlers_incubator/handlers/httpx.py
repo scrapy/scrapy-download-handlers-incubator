@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 
 
 try:
+    import h2.exceptions
     import httpx
 except ImportError:
     httpx = None  # type: ignore[assignment]
@@ -145,7 +146,11 @@ class HttpxDownloadHandler(_Base):
             raise DownloadConnectionRefusedError(str(e)) from e
         except httpx.ProxyError as e:
             raise DownloadConnectionRefusedError(str(e)) from e
-        except (httpx.NetworkError, httpx.RemoteProtocolError) as e:
+        except (
+            httpx.NetworkError,
+            httpx.RemoteProtocolError,
+            h2.exceptions.InvalidBodyLengthError,
+        ) as e:
             raise DownloadFailedError(str(e)) from e
 
     @staticmethod
