@@ -118,12 +118,12 @@ class TestHttp11Proxy(AiohttpDownloadHandlerMixin, TestHttpProxyBase):
 class TestHttps11Proxy(AiohttpDownloadHandlerMixin, TestHttpProxyBase):
     is_secure = True
 
-    @staticmethod
-    def handler_supports_tls_in_tls() -> bool:
+    @property
+    def handler_supports_tls_in_tls(self) -> bool:
         return sys.version_info >= (3, 11)
 
 
 class TestMitmProxy(AiohttpDownloadHandlerSettingsMixin, TestMitmProxyBase):
-    @staticmethod
-    def handler_supports_tls_in_tls() -> bool:
+    @property
+    def handler_supports_tls_in_tls(self) -> bool:
         return sys.version_info >= (3, 11)
