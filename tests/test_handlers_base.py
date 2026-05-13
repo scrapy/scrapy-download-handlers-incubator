@@ -59,17 +59,19 @@ if TYPE_CHECKING:
 
 
 class TestHttpBase(ABC):
-    is_secure = False
+    is_secure: bool = False
+    http2: bool = False
     # whether the handler supports per-request bindaddress
-    handler_supports_bindaddress_meta = True
+    handler_supports_bindaddress_meta: bool = True
     # whether the handler merges values for the same header name
-    handler_merges_headers = False
+    handler_merges_headers: bool = False
     # RFC 9113 §8.1.1 explicitly says that a Content-Length mismatch is a
     # stream error (of type PROTOCOL_ERROR) so the client will send
     # RST_STREAM. Some libraries do only this while e.g. h2 also closes the
     # connection (see handling of ProtocolError in
-    # h2.connection.H2Connection.receive_data()).
-    handler_supports_http2_dataloss = True
+    # h2.connection.H2Connection.receive_data()), thus closing all streams that
+    # were using it, and we handle this as a normal exception.
+    handler_supports_http2_dataloss: bool = True
     # default headers added by the underlying library that cannot be suppressed
     always_present_req_headers: ClassVar[frozenset[str]] = frozenset()
     default_handler_settings: ClassVar[dict[str, Any]] = {}
@@ -530,11 +532,13 @@ class TestHttpBase(ABC):
         async with self.get_dh() as download_handler:
             await download_handler.download_request(request)
         assert "download_latency" in request.meta
-        assert request.meta["download_latency"] >= 0
-
-
-class TestHttp11Base(TestHttpBase):
-    http2: bool = False
+        latency = request.meta["download_latency"]
+        if sys.version_info < (3, 13) and sys.platform == "win32":
+            # time.monotonic() resolution is too low here:
+            # https://docs.python.org/3/whatsnew/3.13.html#time
+            assert latency >= 0
+        else:
+            assert latency > 0
 
     @coroutine_test
     async def test_download_without_maxsize_limit(self, mockserver: MockServer) -> None:
@@ -809,7 +813,7 @@ class TestHttp11Base(TestHttpBase):
             )
 
 
-class TestHttps11Base(TestHttp11Base):
+class TestHttpsBase(TestHttpBase):
     is_secure = True
 
     tls_log_message = (
@@ -974,7 +978,7 @@ class TestHttpWithCrawlerBase(ABC):
         if isinstance(cert, Certificate):  # Twisted
             assert cert.getSubject().commonName == b"localhost"  # type: ignore[no-untyped-call]
             assert cert.getIssuer().commonName == b"localhost"  # type: ignore[no-untyped-call]
-        elif isinstance(cert, bytes):  # in several handlers it's DER bytes
+        elif isinstance(cert, bytes):  # DER bytes
             cert_x509 = load_der_x509_certificate(cert)
             assert cert_x509.subject.rfc4514_string() == "CN=localhost,O=Scrapy,C=IE"
             assert cert_x509.issuer.rfc4514_string() == "CN=localhost,O=Scrapy,C=IE"
