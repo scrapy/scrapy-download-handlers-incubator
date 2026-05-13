@@ -8,9 +8,9 @@ from scrapy import Request
 from scrapy.exceptions import DownloadFailedError
 
 from tests.test_handlers_base import (
-    TestHttp11Base,
+    TestHttpBase,
     TestHttpProxyBase,
-    TestHttps11Base,
+    TestHttpsBase,
     TestHttpsCustomCiphersBase,
     TestHttpsInvalidDNSIdBase,
     TestHttpsInvalidDNSPatternBase,
@@ -40,8 +40,6 @@ class HttpxDownloadHandlerMixin:
 
         return HttpxDownloadHandler
 
-
-class HttpxDownloadHandlerSettingsMixin:
     @property
     def settings_dict(self) -> dict[str, Any] | None:
         return {
@@ -52,7 +50,7 @@ class HttpxDownloadHandlerSettingsMixin:
         }
 
 
-class TestHttp11(HttpxDownloadHandlerMixin, TestHttp11Base):
+class TestHttp(HttpxDownloadHandlerMixin, TestHttpBase):
     handler_supports_bindaddress_meta = False
 
     @pytest.mark.skipif(
@@ -73,12 +71,12 @@ class TestHttp11(HttpxDownloadHandlerMixin, TestHttp11Base):
         assert "Ignoring the port" in caplog.text
 
 
-class TestHttps11(HttpxDownloadHandlerMixin, TestHttps11Base):
+class TestHttps(HttpxDownloadHandlerMixin, TestHttpsBase):
     handler_supports_bindaddress_meta = False
     tls_log_message = "SSL connection to 127.0.0.1 using protocol TLSv1.3, cipher"
 
 
-class TestHttps2(TestHttps11):
+class TestHttp2(TestHttps):
     http2 = True
     handler_supports_http2_dataloss = False
 
@@ -105,40 +103,40 @@ class TestSimpleHttps(HttpxDownloadHandlerMixin, TestSimpleHttpsBase):
     pass
 
 
-class TestHttps11WrongHostname(HttpxDownloadHandlerMixin, TestHttpsWrongHostnameBase):
+class TestHttpsWrongHostname(HttpxDownloadHandlerMixin, TestHttpsWrongHostnameBase):
     pass
 
 
-class TestHttps11InvalidDNSId(HttpxDownloadHandlerMixin, TestHttpsInvalidDNSIdBase):
+class TestHttpsInvalidDNSId(HttpxDownloadHandlerMixin, TestHttpsInvalidDNSIdBase):
     pass
 
 
-class TestHttps11InvalidDNSPattern(
+class TestHttpsInvalidDNSPattern(
     HttpxDownloadHandlerMixin, TestHttpsInvalidDNSPatternBase
 ):
     pass
 
 
-class TestHttps11CustomCiphers(HttpxDownloadHandlerMixin, TestHttpsCustomCiphersBase):
+class TestHttpsCustomCiphers(HttpxDownloadHandlerMixin, TestHttpsCustomCiphersBase):
     pass
 
 
-class TestHttp11WithCrawler(HttpxDownloadHandlerSettingsMixin, TestHttpWithCrawlerBase):
+class TestHttpWithCrawler(HttpxDownloadHandlerMixin, TestHttpWithCrawlerBase):
     pass
 
 
-class TestHttps11WithCrawler(TestHttp11WithCrawler):
+class TestHttpsWithCrawler(TestHttpWithCrawler):
     is_secure = True
 
 
-class TestHttp11Proxy(HttpxDownloadHandlerMixin, TestHttpProxyBase):
+class TestHttpProxy(HttpxDownloadHandlerMixin, TestHttpProxyBase):
     expected_http_proxy_request_body = b"http://example.com/"
 
 
-class TestHttps11Proxy(TestHttp11Proxy):
+class TestHttpsProxy(TestHttpProxy):
     is_secure = True
-    expected_http_proxy_request_body = TestHttp11Proxy.expected_http_proxy_request_body
+    expected_http_proxy_request_body = TestHttpProxy.expected_http_proxy_request_body
 
 
-class TestMitmProxy(HttpxDownloadHandlerSettingsMixin, TestMitmProxyBase):
+class TestMitmProxy(HttpxDownloadHandlerMixin, TestMitmProxyBase):
     pass

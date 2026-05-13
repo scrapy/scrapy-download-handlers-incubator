@@ -6,9 +6,9 @@ import pytest
 from scrapy import Request
 
 from tests.test_handlers_base import (
-    TestHttp11Base,
+    TestHttpBase,
     TestHttpProxyBase,
-    TestHttps11Base,
+    TestHttpsBase,
     TestHttpsInvalidDNSIdBase,
     TestHttpsInvalidDNSPatternBase,
     TestHttpsWrongHostnameBase,
@@ -36,8 +36,6 @@ class CurlCffiDownloadHandlerMixin:
 
         return CurlCffiDownloadHandler
 
-
-class CurlCffiDownloadHandlerSettingsMixin:
     @property
     def settings_dict(self) -> dict[str, Any] | None:
         return {
@@ -48,11 +46,11 @@ class CurlCffiDownloadHandlerSettingsMixin:
         }
 
 
-class TestHttp11(CurlCffiDownloadHandlerMixin, TestHttp11Base):
+class TestHttp(CurlCffiDownloadHandlerMixin, TestHttpBase):
     handler_supports_bindaddress_meta = False
 
 
-class TestHttps11(CurlCffiDownloadHandlerMixin, TestHttps11Base):
+class TestHttps(CurlCffiDownloadHandlerMixin, TestHttpsBase):
     handler_supports_bindaddress_meta = False
 
     @pytest.mark.skip(reason="TLS verbose logging is not implemented")
@@ -61,7 +59,7 @@ class TestHttps11(CurlCffiDownloadHandlerMixin, TestHttps11Base):
         pass
 
 
-class TestHttps2(TestHttps11):
+class TestHttp2(TestHttps):
     http2 = True
 
     default_handler_settings: ClassVar[dict[str, Any]] = {
@@ -80,33 +78,29 @@ class TestSimpleHttps(CurlCffiDownloadHandlerMixin, TestSimpleHttpsBase):
     pass
 
 
-class TestHttps11WrongHostname(
-    CurlCffiDownloadHandlerMixin, TestHttpsWrongHostnameBase
-):
+class TestHttpsWrongHostname(CurlCffiDownloadHandlerMixin, TestHttpsWrongHostnameBase):
     pass
 
 
-class TestHttps11InvalidDNSId(CurlCffiDownloadHandlerMixin, TestHttpsInvalidDNSIdBase):
+class TestHttpsInvalidDNSId(CurlCffiDownloadHandlerMixin, TestHttpsInvalidDNSIdBase):
     pass
 
 
-class TestHttps11InvalidDNSPattern(
+class TestHttpsInvalidDNSPattern(
     CurlCffiDownloadHandlerMixin, TestHttpsInvalidDNSPatternBase
 ):
     pass
 
 
 # custom ciphers are not supported
-# class TestHttps11CustomCiphers
+# class TestHttpsCustomCiphers
 
 
-class TestHttp11WithCrawler(
-    CurlCffiDownloadHandlerSettingsMixin, TestHttpWithCrawlerBase
-):
+class TestHttpWithCrawler(CurlCffiDownloadHandlerMixin, TestHttpWithCrawlerBase):
     pass
 
 
-class TestHttps11WithCrawler(TestHttp11WithCrawler):
+class TestHttpsWithCrawler(TestHttpWithCrawler):
     is_secure = True
 
     @pytest.mark.skip(reason="response.certificate is not implemented")
@@ -115,14 +109,14 @@ class TestHttps11WithCrawler(TestHttp11WithCrawler):
         pass
 
 
-class TestHttp11Proxy(CurlCffiDownloadHandlerMixin, TestHttpProxyBase):
+class TestHttpProxy(CurlCffiDownloadHandlerMixin, TestHttpProxyBase):
     expected_http_proxy_request_body = b"http://example.com/"
 
 
-class TestHttps11Proxy(CurlCffiDownloadHandlerMixin, TestHttpProxyBase):
+class TestHttpsProxy(CurlCffiDownloadHandlerMixin, TestHttpProxyBase):
     is_secure = True
-    expected_http_proxy_request_body = TestHttp11Proxy.expected_http_proxy_request_body
+    expected_http_proxy_request_body = TestHttpProxy.expected_http_proxy_request_body
 
 
-class TestMitmProxy(CurlCffiDownloadHandlerSettingsMixin, TestMitmProxyBase):
+class TestMitmProxy(CurlCffiDownloadHandlerMixin, TestMitmProxyBase):
     pass

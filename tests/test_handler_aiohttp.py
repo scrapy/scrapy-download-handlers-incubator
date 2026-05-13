@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from tests.test_handlers_base import (
-    TestHttp11Base,
+    TestHttpBase,
     TestHttpProxyBase,
-    TestHttps11Base,
+    TestHttpsBase,
     TestHttpsCustomCiphersBase,
     TestHttpsInvalidDNSIdBase,
     TestHttpsInvalidDNSPatternBase,
@@ -37,8 +37,6 @@ class AiohttpDownloadHandlerMixin:
 
         return AiohttpDownloadHandler
 
-
-class AiohttpDownloadHandlerSettingsMixin:
     @property
     def settings_dict(self) -> dict[str, Any] | None:
         return {
@@ -49,11 +47,11 @@ class AiohttpDownloadHandlerSettingsMixin:
         }
 
 
-class TestHttp11(AiohttpDownloadHandlerMixin, TestHttp11Base):
+class TestHttp(AiohttpDownloadHandlerMixin, TestHttpBase):
     handler_supports_bindaddress_meta = False
 
 
-class TestHttps11(AiohttpDownloadHandlerMixin, TestHttps11Base):
+class TestHttps(AiohttpDownloadHandlerMixin, TestHttpsBase):
     handler_supports_bindaddress_meta = False
 
     @pytest.mark.skip(reason="TLS verbose logging is not available for short responses")
@@ -68,34 +66,32 @@ class TestSimpleHttps(AiohttpDownloadHandlerMixin, TestSimpleHttpsBase):
     pass
 
 
-class TestHttps11WrongHostname(AiohttpDownloadHandlerMixin, TestHttpsWrongHostnameBase):
+class TestHttpsWrongHostname(AiohttpDownloadHandlerMixin, TestHttpsWrongHostnameBase):
     pass
 
 
-class TestHttps11InvalidDNSId(AiohttpDownloadHandlerMixin, TestHttpsInvalidDNSIdBase):
+class TestHttpsInvalidDNSId(AiohttpDownloadHandlerMixin, TestHttpsInvalidDNSIdBase):
     pass
 
 
-class TestHttps11InvalidDNSPattern(
+class TestHttpsInvalidDNSPattern(
     AiohttpDownloadHandlerMixin, TestHttpsInvalidDNSPatternBase
 ):
     pass
 
 
-class TestHttps11CustomCiphers(AiohttpDownloadHandlerMixin, TestHttpsCustomCiphersBase):
+class TestHttpsCustomCiphers(AiohttpDownloadHandlerMixin, TestHttpsCustomCiphersBase):
     pass
 
 
-class TestHttp11WithCrawler(
-    AiohttpDownloadHandlerSettingsMixin, TestHttpWithCrawlerBase
-):
+class TestHttpWithCrawler(AiohttpDownloadHandlerMixin, TestHttpWithCrawlerBase):
     @pytest.mark.skip(reason="response.ip_address is not available for short responses")
     @coroutine_test
     async def test_response_ip_address(self, mockserver: MockServer) -> None:
         pass
 
 
-class TestHttps11WithCrawler(TestHttp11WithCrawler):
+class TestHttpsWithCrawler(TestHttpWithCrawler):
     is_secure = True
 
     @pytest.mark.skip(
@@ -111,11 +107,11 @@ class TestHttps11WithCrawler(TestHttp11WithCrawler):
         pass
 
 
-class TestHttp11Proxy(AiohttpDownloadHandlerMixin, TestHttpProxyBase):
+class TestHttpProxy(AiohttpDownloadHandlerMixin, TestHttpProxyBase):
     pass
 
 
-class TestHttps11Proxy(AiohttpDownloadHandlerMixin, TestHttpProxyBase):
+class TestHttpsProxy(AiohttpDownloadHandlerMixin, TestHttpProxyBase):
     is_secure = True
 
     @property
@@ -123,7 +119,7 @@ class TestHttps11Proxy(AiohttpDownloadHandlerMixin, TestHttpProxyBase):
         return sys.version_info >= (3, 11)
 
 
-class TestMitmProxy(AiohttpDownloadHandlerSettingsMixin, TestMitmProxyBase):
+class TestMitmProxy(AiohttpDownloadHandlerMixin, TestMitmProxyBase):
     @property
     def handler_supports_tls_in_tls(self) -> bool:
         return sys.version_info >= (3, 11)

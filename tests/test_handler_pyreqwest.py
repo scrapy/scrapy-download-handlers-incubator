@@ -7,8 +7,8 @@ import pytest
 from scrapy import Request
 
 from tests.test_handlers_base import (
-    TestHttp11Base,
-    TestHttps11Base,
+    TestHttpBase,
+    TestHttpsBase,
     TestHttpsInvalidDNSIdBase,
     TestHttpsInvalidDNSPatternBase,
     TestHttpsWrongHostnameBase,
@@ -35,8 +35,6 @@ class PyreqwestDownloadHandlerMixin:
 
         return PyreqwestDownloadHandler
 
-
-class PyreqwestDownloadHandlerSettingsMixin:
     @property
     def settings_dict(self) -> dict[str, Any] | None:
         return {
@@ -47,7 +45,7 @@ class PyreqwestDownloadHandlerSettingsMixin:
         }
 
 
-class TestHttp11(PyreqwestDownloadHandlerMixin, TestHttp11Base):
+class TestHttp(PyreqwestDownloadHandlerMixin, TestHttpBase):
     handler_supports_bindaddress_meta = False
     always_present_req_headers = frozenset({"Accept", "User-Agent"})
 
@@ -77,9 +75,9 @@ class TestHttp11(PyreqwestDownloadHandlerMixin, TestHttp11Base):
                 await download_handler.download_request(request)
 
 
-class TestHttps11(PyreqwestDownloadHandlerMixin, TestHttps11Base):
+class TestHttps(PyreqwestDownloadHandlerMixin, TestHttpsBase):
     handler_supports_bindaddress_meta = False
-    always_present_req_headers = TestHttp11.always_present_req_headers
+    always_present_req_headers = TestHttp.always_present_req_headers
 
     @pytest.mark.skip(reason="TLS verbose logging is not implemented")
     @coroutine_test
@@ -87,7 +85,7 @@ class TestHttps11(PyreqwestDownloadHandlerMixin, TestHttps11Base):
         pass
 
 
-class TestHttps2(TestHttps11):
+class TestHttp2(TestHttps):
     http2 = True
 
     default_handler_settings: ClassVar[dict[str, Any]] = {
@@ -106,36 +104,32 @@ class TestSimpleHttps(PyreqwestDownloadHandlerMixin, TestSimpleHttpsBase):
     pass
 
 
-class TestHttps11WrongHostname(
-    PyreqwestDownloadHandlerMixin, TestHttpsWrongHostnameBase
-):
+class TestHttpsWrongHostname(PyreqwestDownloadHandlerMixin, TestHttpsWrongHostnameBase):
     pass
 
 
-class TestHttps11InvalidDNSId(PyreqwestDownloadHandlerMixin, TestHttpsInvalidDNSIdBase):
+class TestHttpsInvalidDNSId(PyreqwestDownloadHandlerMixin, TestHttpsInvalidDNSIdBase):
     pass
 
 
-class TestHttps11InvalidDNSPattern(
+class TestHttpsInvalidDNSPattern(
     PyreqwestDownloadHandlerMixin, TestHttpsInvalidDNSPatternBase
 ):
     pass
 
 
 # custom ciphers are not supported
-# class TestHttps11CustomCiphers
+# class TestHttpsCustomCiphers
 
 
-class TestHttp11WithCrawler(
-    PyreqwestDownloadHandlerSettingsMixin, TestHttpWithCrawlerBase
-):
+class TestHttpWithCrawler(PyreqwestDownloadHandlerMixin, TestHttpWithCrawlerBase):
     @pytest.mark.skip(reason="response.ip_address is not implemented")
     @coroutine_test
     async def test_response_ip_address(self, mockserver: MockServer) -> None:
         pass
 
 
-class TestHttps11WithCrawler(TestHttp11WithCrawler):
+class TestHttpsWithCrawler(TestHttpWithCrawler):
     is_secure = True
 
     @pytest.mark.skip(reason="response.certificate is not implemented")
@@ -145,6 +139,6 @@ class TestHttps11WithCrawler(TestHttp11WithCrawler):
 
 
 # Proxies aren't supported
-# class TestHttp11Proxy
-# class TestHttps11Proxy
+# class TestHttpProxy
+# class TestHttpsProxy
 # class TestMitmProxy

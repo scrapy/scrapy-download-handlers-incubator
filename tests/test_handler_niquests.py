@@ -6,9 +6,9 @@ import pytest
 from scrapy import Request
 
 from tests.test_handlers_base import (
-    TestHttp11Base,
+    TestHttpBase,
     TestHttpProxyBase,
-    TestHttps11Base,
+    TestHttpsBase,
     TestHttpsInvalidDNSIdBase,
     TestHttpsInvalidDNSPatternBase,
     TestHttpsWrongHostnameBase,
@@ -36,8 +36,6 @@ class NiquestsDownloadHandlerMixin:
 
         return NiquestsDownloadHandler
 
-
-class NiquestsDownloadHandlerSettingsMixin:
     @property
     def settings_dict(self) -> dict[str, Any] | None:
         return {
@@ -48,21 +46,21 @@ class NiquestsDownloadHandlerSettingsMixin:
         }
 
 
-class TestHttp11(NiquestsDownloadHandlerMixin, TestHttp11Base):
+class TestHttp(NiquestsDownloadHandlerMixin, TestHttpBase):
     handler_supports_bindaddress_meta = False
     handler_merges_headers = True
     # urllib3.future always adds these, even with an empty session.headers
     always_present_req_headers = frozenset({"Accept-Encoding", "User-Agent"})
 
 
-class TestHttps11(NiquestsDownloadHandlerMixin, TestHttps11Base):
+class TestHttps(NiquestsDownloadHandlerMixin, TestHttpsBase):
     handler_supports_bindaddress_meta = False
     handler_merges_headers = True
-    always_present_req_headers = TestHttp11.always_present_req_headers
+    always_present_req_headers = TestHttp.always_present_req_headers
     tls_log_message = "SSL connection to 127.0.0.1 using protocol TLSv1_3, cipher"
 
 
-class TestHttps2(TestHttps11):
+class TestHttp2(TestHttps):
     http2 = True
 
     default_handler_settings: ClassVar[dict[str, Any]] = {
@@ -105,43 +103,39 @@ class TestSimpleHttps(NiquestsDownloadHandlerMixin, TestSimpleHttpsBase):
     pass
 
 
-class TestHttps11WrongHostname(
-    NiquestsDownloadHandlerMixin, TestHttpsWrongHostnameBase
-):
+class TestHttpsWrongHostname(NiquestsDownloadHandlerMixin, TestHttpsWrongHostnameBase):
     pass
 
 
-class TestHttps11InvalidDNSId(NiquestsDownloadHandlerMixin, TestHttpsInvalidDNSIdBase):
+class TestHttpsInvalidDNSId(NiquestsDownloadHandlerMixin, TestHttpsInvalidDNSIdBase):
     pass
 
 
-class TestHttps11InvalidDNSPattern(
+class TestHttpsInvalidDNSPattern(
     NiquestsDownloadHandlerMixin, TestHttpsInvalidDNSPatternBase
 ):
     pass
 
 
 # custom ciphers are not supported
-# class TestHttps11CustomCiphers
+# class TestHttpsCustomCiphers
 
 
-class TestHttp11WithCrawler(
-    NiquestsDownloadHandlerSettingsMixin, TestHttpWithCrawlerBase
-):
+class TestHttpWithCrawler(NiquestsDownloadHandlerMixin, TestHttpWithCrawlerBase):
     pass
 
 
-class TestHttps11WithCrawler(TestHttp11WithCrawler):
+class TestHttpsWithCrawler(TestHttpWithCrawler):
     is_secure = True
 
 
-class TestHttp11Proxy(NiquestsDownloadHandlerMixin, TestHttpProxyBase):
+class TestHttpProxy(NiquestsDownloadHandlerMixin, TestHttpProxyBase):
     @pytest.mark.skip(reason="Hangs, as the test is hacky")
     def test_download_with_proxy_https_timeout(self) -> None:  # type: ignore[override]
         pass
 
 
-class TestHttps11Proxy(NiquestsDownloadHandlerMixin, TestHttpProxyBase):
+class TestHttpsProxy(NiquestsDownloadHandlerMixin, TestHttpProxyBase):
     is_secure = True
 
     @pytest.mark.skip(reason="Hangs, as the test is hacky")
@@ -149,5 +143,5 @@ class TestHttps11Proxy(NiquestsDownloadHandlerMixin, TestHttpProxyBase):
         pass
 
 
-class TestMitmProxy(NiquestsDownloadHandlerSettingsMixin, TestMitmProxyBase):
+class TestMitmProxy(NiquestsDownloadHandlerMixin, TestMitmProxyBase):
     pass
