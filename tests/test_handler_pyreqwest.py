@@ -13,6 +13,7 @@ from tests.test_handlers_base import (
     TestHttpsInvalidDNSPatternBase,
     TestHttpsWrongHostnameBase,
     TestHttpWithCrawlerBase,
+    TestRealWebsiteBase,
     TestSimpleHttpsBase,
 )
 from tests.utils.decorators import coroutine_test
@@ -142,3 +143,8 @@ class TestHttpsWithCrawler(TestHttpWithCrawler):
 # class TestHttpProxy
 # class TestHttpsProxy
 # class TestMitmProxy
+
+
+@pytest.mark.requires_internet
+class TestRealWebsite(PyreqwestDownloadHandlerMixin, TestRealWebsiteBase):
+    pass

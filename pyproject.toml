@@ -112,6 +112,9 @@ follow_imports = "skip"
 # and typing-extensions.
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
+markers = [
+    "requires_internet: marks tests that need real Internet access",
+]
 filterwarnings = [
     "ignore::DeprecationWarning:twisted.web.static",
 ]

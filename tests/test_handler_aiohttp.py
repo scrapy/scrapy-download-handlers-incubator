@@ -15,6 +15,7 @@ from tests.test_handlers_base import (
     TestHttpsWrongHostnameBase,
     TestHttpWithCrawlerBase,
     TestMitmProxyBase,
+    TestRealWebsiteBase,
     TestSimpleHttpsBase,
 )
 from tests.utils.decorators import coroutine_test
@@ -123,3 +124,8 @@ class TestMitmProxy(AiohttpDownloadHandlerMixin, TestMitmProxyBase):
     @property
     def handler_supports_tls_in_tls(self) -> bool:
         return sys.version_info >= (3, 11)
+
+
+@pytest.mark.requires_internet
+class TestRealWebsite(AiohttpDownloadHandlerMixin, TestRealWebsiteBase):
+    pass
