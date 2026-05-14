@@ -14,6 +14,7 @@ from tests.test_handlers_base import (
     TestHttpsWrongHostnameBase,
     TestHttpWithCrawlerBase,
     TestMitmProxyBase,
+    TestRealWebsiteBase,
     TestSimpleHttpsBase,
 )
 from tests.utils.decorators import coroutine_test
@@ -119,4 +120,9 @@ class TestHttpsProxy(CurlCffiDownloadHandlerMixin, TestHttpProxyBase):
 
 
 class TestMitmProxy(CurlCffiDownloadHandlerMixin, TestMitmProxyBase):
+    pass
+
+
+@pytest.mark.requires_internet
+class TestRealWebsite(CurlCffiDownloadHandlerMixin, TestRealWebsiteBase):
     pass
