@@ -5,8 +5,12 @@ from __future__ import annotations
 import ipaddress
 import ssl
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
+from scrapy.core.downloader.handlers._base_streaming import (
+    BaseStreamingDownloadHandler,
+    _BaseResponseArgs,
+)
 from scrapy.exceptions import (
     CannotResolveHostError,
     DownloadConnectionRefusedError,
@@ -16,16 +20,11 @@ from scrapy.exceptions import (
     UnsupportedURLSchemeError,
 )
 from scrapy.http import Headers
-from scrapy.utils.ssl import _make_ssl_context
-
-from scrapy_download_handlers_incubator.handlers._base import (
-    BaseStreamingDownloadHandler,
-    _BaseResponseArgs,
-)
-from scrapy_download_handlers_incubator.utils import (
-    NullCookieJar,
-    log_sslobj_debug_info,
-    make_insecure_ssl_ctx,
+from scrapy.utils._download_handlers import NullCookieJar
+from scrapy.utils.ssl import (
+    _log_sslobj_debug_info,
+    _make_insecure_ssl_ctx,
+    _make_ssl_context,
 )
 
 if TYPE_CHECKING:
@@ -50,6 +49,8 @@ else:
 
 
 class HttpxDownloadHandler(_Base):
+    experimental: ClassVar[bool] = True
+
     def __init__(self, crawler: Crawler):
         super().__init__(crawler)
         self._verify_certificates: bool = crawler.settings.getbool(
@@ -81,7 +82,7 @@ class HttpxDownloadHandler(_Base):
         if proxy_url:
             if proxy_url.startswith("https:") and not self._verify_certificates:
                 # disable proxy cert verification for test simplification and to match other handlers
-                proxy_ssl_context = make_insecure_ssl_ctx()
+                proxy_ssl_context = _make_insecure_ssl_ctx()
             else:
                 proxy_ssl_context = None
 
@@ -194,7 +195,7 @@ class HttpxDownloadHandler(_Base):
         network_stream: AsyncNetworkStream = response.extensions["network_stream"]
         extra_ssl_object = network_stream.get_extra_info("ssl_object")
         if isinstance(extra_ssl_object, ssl.SSLObject):
-            log_sslobj_debug_info(extra_ssl_object)
+            _log_sslobj_debug_info(extra_ssl_object)
 
     async def close(self) -> None:
         await self._default_client.aclose()

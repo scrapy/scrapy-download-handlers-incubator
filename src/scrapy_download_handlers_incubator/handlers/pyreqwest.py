@@ -6,6 +6,10 @@ from contextlib import asynccontextmanager
 from datetime import timedelta
 from typing import TYPE_CHECKING, ClassVar
 
+from scrapy.core.downloader.handlers._base_streaming import (
+    BaseStreamingDownloadHandler,
+    _BaseResponseArgs,
+)
 from scrapy.exceptions import (
     CannotResolveHostError,
     DownloadConnectionRefusedError,
@@ -15,11 +19,6 @@ from scrapy.exceptions import (
     UnsupportedURLSchemeError,
 )
 from scrapy.http import Headers
-
-from scrapy_download_handlers_incubator.handlers._base import (
-    BaseStreamingDownloadHandler,
-    _BaseResponseArgs,
-)
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -45,6 +44,7 @@ else:
 
 
 class PyreqwestDownloadHandler(_Base):
+    experimental: ClassVar[bool] = True
     # reqwest doesn't support per-request proxies, see e.g.
     # https://github.com/seanmonstar/reqwest/issues/1764, while Scrapy doesn't
     # support global proxies (HttpProxyMiddleware converts them to request meta)
