@@ -6,8 +6,12 @@ import asyncio
 import ipaddress
 import ssl
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
+from scrapy.core.downloader.handlers._base_streaming import (
+    BaseStreamingDownloadHandler,
+    _BaseResponseArgs,
+)
 from scrapy.exceptions import (
     CannotResolveHostError,
     DownloadConnectionRefusedError,
@@ -17,13 +21,7 @@ from scrapy.exceptions import (
     UnsupportedURLSchemeError,
 )
 from scrapy.http import Headers
-from scrapy.utils.ssl import _make_ssl_context
-
-from scrapy_download_handlers_incubator.handlers._base import (
-    BaseStreamingDownloadHandler,
-    _BaseResponseArgs,
-)
-from scrapy_download_handlers_incubator.utils import log_sslobj_debug_info
+from scrapy.utils.ssl import _log_sslobj_debug_info, _make_ssl_context
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -45,6 +43,8 @@ else:
 
 
 class AiohttpDownloadHandler(_Base):
+    experimental: ClassVar[bool] = True
+
     def __init__(self, crawler: Crawler):
         super().__init__(crawler)
         self._ssl_context: ssl.SSLContext = _make_ssl_context(crawler.settings)
@@ -159,7 +159,7 @@ class AiohttpDownloadHandler(_Base):
             return
         ssl_object = conn.transport.get_extra_info("ssl_object")
         if isinstance(ssl_object, ssl.SSLObject):
-            log_sslobj_debug_info(ssl_object)
+            _log_sslobj_debug_info(ssl_object)
 
     @staticmethod
     def _iter_body_chunks(response: aiohttp.ClientResponse) -> AsyncIterator[bytes]:

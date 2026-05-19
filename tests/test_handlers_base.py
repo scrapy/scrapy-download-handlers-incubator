@@ -968,7 +968,6 @@ class TestHttpWithCrawlerBase(ABC):
         if not self.is_secure:
             pytest.skip("Only applies to HTTPS")
         # copy of TestCrawl.test_response_ssl_certificate()
-        # the current test implementation can only work for Twisted-based download handlers
         crawler = get_crawler(SingleRequestSpider, self.settings_dict)
         url = mockserver.url("/echo?body=test", is_secure=self.is_secure)
         await crawler.crawl_async(seed=url, mockserver=mockserver)
@@ -1316,3 +1315,20 @@ class TestRealWebsiteBase(ABC):
             response = await download_handler.download_request(request)
         assert response.status == 200
         assert "All products | Books to Scrape - Sandbox" in response.text
+
+    @pytest.mark.parametrize("verify_certs", [True, False])
+    @coroutine_test
+    async def test_tls_logging(
+        self, caplog: pytest.LogCaptureFixture, verify_certs: bool
+    ) -> None:
+        request = Request("https://books.toscrape.com/")
+        async with self.get_dh(
+            {
+                "DOWNLOADER_CLIENT_TLS_VERBOSE_LOGGING": True,
+                "DOWNLOAD_VERIFY_CERTIFICATES": verify_certs,
+            }
+        ) as download_handler:
+            with caplog.at_level("DEBUG"):
+                response = await download_handler.download_request(request)
+        assert response.status == 200
+        assert "SSL connection to books.toscrape.com using protocol" in caplog.text

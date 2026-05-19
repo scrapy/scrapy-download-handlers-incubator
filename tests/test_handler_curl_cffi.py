@@ -125,4 +125,7 @@ class TestMitmProxy(CurlCffiDownloadHandlerMixin, TestMitmProxyBase):
 
 @pytest.mark.requires_internet
 class TestRealWebsite(CurlCffiDownloadHandlerMixin, TestRealWebsiteBase):
-    pass
+    @pytest.mark.skip(reason="TLS verbose logging is not implemented")
+    @coroutine_test
+    async def test_tls_logging(self) -> None:  # type: ignore[override]
+        pass
