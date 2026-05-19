@@ -31,11 +31,11 @@ def ssl_context_factory(
         key = load_privatekey(FILETYPE_PEM, keyfile_path.read_bytes())  # type: ignore[assignment]
 
     factory: CertificateOptions = CertificateOptions(
-        privateKey=key,
-        certificate=cert,
+        privateKey=key,  # type: ignore[arg-type]
+        certificate=cert,  # type: ignore[arg-type]
     )
     if cipher_string:
-        ctx = factory.getContext()  # type: ignore[no-untyped-call]
+        ctx = factory.getContext()
         # disabling TLS1.3 because it unconditionally enables some strong ciphers
         ctx.set_options(SSL.OP_CIPHER_SERVER_PREFERENCE | SSL.OP_NO_TLSv1_3)
         ctx.set_cipher_list(to_bytes(cipher_string))

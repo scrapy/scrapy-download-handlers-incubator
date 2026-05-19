@@ -70,7 +70,7 @@ deps = [
     "niquests==3.18.8",
     "pyreqwest==0.12.0",
     "pytest==9.0.3",
-    "Scrapy==2.15.2",
+    "Scrapy==2.16.0",
 ]
 commands = [
     ["mypy", { replace = "posargs", default = ["src", "tests"], extend = true }],
