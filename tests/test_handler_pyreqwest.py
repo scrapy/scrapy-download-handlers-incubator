@@ -147,4 +147,7 @@ class TestHttpsWithCrawler(TestHttpWithCrawler):
 
 @pytest.mark.requires_internet
 class TestRealWebsite(PyreqwestDownloadHandlerMixin, TestRealWebsiteBase):
-    pass
+    @pytest.mark.skip(reason="TLS verbose logging is not implemented")
+    @coroutine_test
+    async def test_tls_logging(self) -> None:  # type: ignore[override]
+        pass

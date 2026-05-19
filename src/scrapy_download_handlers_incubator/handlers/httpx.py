@@ -81,11 +81,9 @@ class HttpxDownloadHandler(_Base):
     def _make_client(self, proxy_url: str | None = None) -> httpx.AsyncClient:
         if proxy_url:
             if proxy_url.startswith("https:") and not self._verify_certificates:
-                # disable proxy cert verification for test simplification and to match other handlers
                 proxy_ssl_context = _make_insecure_ssl_ctx()
             else:
                 proxy_ssl_context = None
-
             proxy = httpx.Proxy(proxy_url, ssl_context=proxy_ssl_context)
         else:
             proxy = None
