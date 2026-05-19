@@ -15,7 +15,6 @@ from scrapy.exceptions import (
     ResponseDataLossError,
 )
 from scrapy.utils._download_handlers import (
-    BaseHttpDownloadHandler,
     check_stop_download,
     get_dataloss_msg,
     get_maxsize_msg,
@@ -25,6 +24,13 @@ from scrapy.utils._download_handlers import (
 )
 from scrapy.utils.asyncio import is_asyncio_available
 from scrapy.utils.url import add_http_if_no_scheme
+
+try:
+    from scrapy.core.downloader.handlers._base_http import BaseHttpDownloadHandler
+except ImportError:  # Scrapy 2.15.x
+    from scrapy.utils._download_handlers import (  # type: ignore[attr-defined,no-redef]
+        BaseHttpDownloadHandler,
+    )
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterable
