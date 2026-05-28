@@ -18,12 +18,9 @@ from tests.test_handlers_base import (
     TestRealWebsiteBase,
     TestSimpleHttpsBase,
 )
-from tests.utils.decorators import coroutine_test
 
 if TYPE_CHECKING:
     from scrapy.core.downloader.handlers import DownloadHandlerProtocol
-
-    from tests.mockserver.http import MockServer
 
 
 pytest.importorskip("aiohttp")
@@ -54,13 +51,7 @@ class TestHttp(AiohttpDownloadHandlerMixin, TestHttpBase):
 
 class TestHttps(AiohttpDownloadHandlerMixin, TestHttpsBase):
     handler_supports_bindaddress_meta = False
-
-    @pytest.mark.skip(reason="TLS verbose logging is not available for short responses")
-    @coroutine_test
-    async def test_tls_logging(
-        self, mockserver: MockServer, caplog: pytest.LogCaptureFixture
-    ) -> None:
-        pass
+    tls_log_message = "SSL connection to 127.0.0.1 using protocol TLSv1.3, cipher"
 
 
 class TestSimpleHttps(AiohttpDownloadHandlerMixin, TestSimpleHttpsBase):
@@ -86,26 +77,11 @@ class TestHttpsCustomCiphers(AiohttpDownloadHandlerMixin, TestHttpsCustomCiphers
 
 
 class TestHttpWithCrawler(AiohttpDownloadHandlerMixin, TestHttpWithCrawlerBase):
-    @pytest.mark.skip(reason="response.ip_address is not available for short responses")
-    @coroutine_test
-    async def test_response_ip_address(self, mockserver: MockServer) -> None:
-        pass
+    pass
 
 
 class TestHttpsWithCrawler(TestHttpWithCrawler):
     is_secure = True
-
-    @pytest.mark.skip(
-        reason="response.certificate is not available for short responses"
-    )
-    @coroutine_test
-    async def test_response_ssl_certificate(self, mockserver: MockServer) -> None:
-        pass
-
-    @pytest.mark.skip(reason="response.ip_address is not available for short responses")
-    @coroutine_test
-    async def test_response_ip_address(self, mockserver: MockServer) -> None:
-        pass
 
 
 class TestHttpProxy(AiohttpDownloadHandlerMixin, TestHttpProxyBase):
