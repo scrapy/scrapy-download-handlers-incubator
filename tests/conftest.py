@@ -44,6 +44,19 @@ def mitm_proxy_server_https(monkeypatch: pytest.MonkeyPatch) -> Generator[MitmPr
         proxy.stop()
 
 
+@pytest.fixture  # function scope because it modifies os.environ
+def socks5_proxy_server(monkeypatch: pytest.MonkeyPatch) -> Generator[MitmProxy]:
+    proxy = MitmProxy(mode="socks5")
+    url = proxy.start()
+    monkeypatch.setenv("http_proxy", url)
+    monkeypatch.setenv("https_proxy", url)
+
+    try:
+        yield proxy
+    finally:
+        proxy.stop()
+
+
 def pytest_configure(config: pytest.Config) -> None:
     # Needed on Windows to switch from proactor to selector for Twisted reactor compatibility.
     set_asyncio_event_loop_policy()
