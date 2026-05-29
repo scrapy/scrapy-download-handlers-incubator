@@ -6,7 +6,7 @@ import asyncio
 import ipaddress
 import ssl
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 from scrapy.core.downloader.handlers._base_streaming import (
     BaseStreamingDownloadHandler,
@@ -32,12 +32,36 @@ if TYPE_CHECKING:
 
 try:
     import aiohttp
+    import aiohttp.connector
 except ImportError:
     aiohttp = None  # type: ignore[assignment]
 
 
+if aiohttp is not None:
+
+    class _ClientResponse(aiohttp.ClientResponse):
+        """Captures transport data that can be lost after parent ``start()``.
+
+        Workaround for https://github.com/aio-libs/aiohttp/issues/2205.
+        """
+
+        _peername: tuple[str, int] | None = None
+        _ssl_object: ssl.SSLObject | None = None
+
+        async def start(
+            self, connection: aiohttp.connector.Connection
+        ) -> aiohttp.ClientResponse:
+            transport = connection.transport
+            if transport is not None:
+                self._peername = transport.get_extra_info("peername")
+                ssl_object = transport.get_extra_info("ssl_object")
+                if isinstance(ssl_object, ssl.SSLObject):
+                    self._ssl_object = ssl_object
+            return await super().start(connection)
+
+
 if TYPE_CHECKING:
-    _Base = BaseStreamingDownloadHandler[aiohttp.ClientResponse]
+    _Base = BaseStreamingDownloadHandler[_ClientResponse]
 else:
     _Base = BaseStreamingDownloadHandler
 
@@ -59,6 +83,7 @@ class AiohttpDownloadHandler(_Base):
             connector=connector,
             cookie_jar=aiohttp.DummyCookieJar(),
             auto_decompress=False,
+            response_class=_ClientResponse,
             skip_auto_headers=(
                 "Accept",
                 "Accept-Encoding",
@@ -77,7 +102,7 @@ class AiohttpDownloadHandler(_Base):
     @asynccontextmanager
     async def _make_request(
         self, request: Request, timeout: float
-    ) -> AsyncIterator[aiohttp.ClientResponse]:
+    ) -> AsyncIterator[_ClientResponse]:
         proxy = self._extract_proxy_url_with_creds(request)
         try:
             async with await self._session.request(
@@ -90,7 +115,7 @@ class AiohttpDownloadHandler(_Base):
                 allow_redirects=False,
                 proxy=proxy,
             ) as response:
-                yield response
+                yield cast("_ClientResponse", response)
         except (TimeoutError, asyncio.TimeoutError) as e:
             raise DownloadTimeoutError(
                 f"Getting {request.url} took longer than {timeout} seconds."
@@ -118,12 +143,12 @@ class AiohttpDownloadHandler(_Base):
             raise DownloadFailedError(str(e)) from e
 
     @staticmethod
-    def _extract_headers(response: aiohttp.ClientResponse) -> Headers:
+    def _extract_headers(response: _ClientResponse) -> Headers:
         return Headers(list(response.headers.items()))
 
     @staticmethod
     def _build_base_response_args(
-        response: aiohttp.ClientResponse,
+        response: _ClientResponse,
         request: Request,
         headers: Headers,
     ) -> _BaseResponseArgs:
@@ -132,18 +157,10 @@ class AiohttpDownloadHandler(_Base):
             f"HTTP/{version.major}.{version.minor}" if version else "HTTP/1.1"
         )
         ip_address = cert = None
-        conn = response.connection
-        if conn is not None and conn.transport is not None:
-            # This only work for large responses, where the connection
-            # is not closed right in ClientResponse.start().
-            # We can subclass ClientResponse to capture peername and
-            # ssl_object early if we really want.
-            peername = conn.transport.get_extra_info("peername")
-            if peername:
-                ip_address = ipaddress.ip_address(peername[0])
-            ssl_object = conn.transport.get_extra_info("ssl_object")
-            if isinstance(ssl_object, ssl.SSLObject):
-                cert = ssl_object.getpeercert(binary_form=True)
+        if response._peername:
+            ip_address = ipaddress.ip_address(response._peername[0])
+        if response._ssl_object:
+            cert = response._ssl_object.getpeercert(binary_form=True)
         return {
             "status": response.status,
             "url": request.url,
@@ -153,16 +170,12 @@ class AiohttpDownloadHandler(_Base):
             "protocol": protocol_version,
         }
 
-    def _log_tls_info(self, response: aiohttp.ClientResponse, request: Request) -> None:
-        conn = response.connection
-        if conn is None or conn.transport is None:
-            return
-        ssl_object = conn.transport.get_extra_info("ssl_object")
-        if isinstance(ssl_object, ssl.SSLObject):
-            _log_sslobj_debug_info(ssl_object)
+    def _log_tls_info(self, response: _ClientResponse, request: Request) -> None:
+        if response._ssl_object:
+            _log_sslobj_debug_info(response._ssl_object)
 
     @staticmethod
-    def _iter_body_chunks(response: aiohttp.ClientResponse) -> AsyncIterator[bytes]:
+    def _iter_body_chunks(response: _ClientResponse) -> AsyncIterator[bytes]:
         return response.content.iter_any()
 
     @staticmethod
