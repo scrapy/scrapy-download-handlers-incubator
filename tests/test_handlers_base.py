@@ -36,7 +36,7 @@ from scrapy.utils.test import get_crawler
 from twisted.internet.ssl import Certificate
 from twisted.python.failure import Failure
 
-from tests.mockserver.mitm_proxy import MitmProxy, wrong_credentials
+from tests.mockserver.mitm_proxy import wrong_credentials
 from tests.mockserver.proxy_echo import ProxyEchoMockServer
 from tests.mockserver.simple_https import SimpleMockServer
 from tests.spiders import (
@@ -1162,13 +1162,10 @@ class TestMitmProxyBase(ABC):
     @pytest.mark.parametrize(
         "https_dest", [False, True], ids=["HTTP dest", "HTTPS dest"]
     )
+    @pytest.mark.usefixtures("mitm_proxy_server")
     @coroutine_test
     async def test_http_proxy(
-        self,
-        caplog: pytest.LogCaptureFixture,
-        mockserver: MockServer,
-        mitm_proxy_server: MitmProxy,
-        https_dest: bool,
+        self, caplog: pytest.LogCaptureFixture, mockserver: MockServer, https_dest: bool
     ) -> None:
         """HTTP proxy, HTTP or HTTPS destination."""
         crawler = get_crawler(SingleRequestSpider, self.settings_dict)
@@ -1183,13 +1180,10 @@ class TestMitmProxyBase(ABC):
     @pytest.mark.parametrize(
         "https_dest", [False, True], ids=["HTTP dest", "HTTPS dest"]
     )
+    @pytest.mark.usefixtures("mitm_proxy_server_https")
     @coroutine_test
     async def test_https_proxy(
-        self,
-        caplog: pytest.LogCaptureFixture,
-        mockserver: MockServer,
-        mitm_proxy_server_https: MitmProxy,
-        https_dest: bool,
+        self, caplog: pytest.LogCaptureFixture, mockserver: MockServer, https_dest: bool
     ) -> None:
         """HTTPS proxy, HTTP or HTTPS destination."""
         if https_dest and not self.handler_supports_tls_in_tls:
@@ -1206,13 +1200,13 @@ class TestMitmProxyBase(ABC):
     @pytest.mark.parametrize(
         "https_dest", [False, True], ids=["HTTP dest", "HTTPS dest"]
     )
+    @pytest.mark.usefixtures("mitm_proxy_server")
     @coroutine_test
     async def test_http_proxy_auth_error(
         self,
         caplog: pytest.LogCaptureFixture,
         monkeypatch: pytest.MonkeyPatch,
         mockserver: MockServer,
-        mitm_proxy_server: MitmProxy,
         https_dest: bool,
     ) -> None:
         """HTTP proxy, HTTP or HTTPS destination, wrong proxy creds."""
@@ -1230,13 +1224,10 @@ class TestMitmProxyBase(ABC):
     @pytest.mark.parametrize(
         "https_dest", [False, True], ids=["HTTP dest", "HTTPS dest"]
     )
+    @pytest.mark.usefixtures("mitm_proxy_server")
     @coroutine_test
     async def test_dont_leak_proxy_authorization_header(
-        self,
-        caplog: pytest.LogCaptureFixture,
-        mockserver: MockServer,
-        mitm_proxy_server: MitmProxy,
-        https_dest: bool,
+        self, caplog: pytest.LogCaptureFixture, mockserver: MockServer, https_dest: bool
     ) -> None:
         """HTTP proxy, HTTP or HTTPS destination. Check that the auth header
         is not sent to the destination."""
@@ -1256,10 +1247,7 @@ class TestMitmProxyBase(ABC):
     @pytest.mark.usefixtures("socks5_proxy_server")
     @coroutine_test
     async def test_download_with_socks_proxy(
-        self,
-        caplog: pytest.LogCaptureFixture,
-        mockserver: MockServer,
-        https_dest: bool,
+        self, caplog: pytest.LogCaptureFixture, mockserver: MockServer, https_dest: bool
     ) -> None:
         """SOCKS5 proxy, HTTP or HTTPS destination."""
         if not self.handler_supports_socks:
