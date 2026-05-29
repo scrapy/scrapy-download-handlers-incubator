@@ -97,6 +97,8 @@ class TestHttpsProxy(AiohttpDownloadHandlerMixin, TestHttpProxyBase):
 
 
 class TestMitmProxy(AiohttpDownloadHandlerMixin, TestMitmProxyBase):
+    handler_supports_socks: bool = False
+
     @property
     def handler_supports_tls_in_tls(self) -> bool:
         return sys.version_info >= (3, 11)

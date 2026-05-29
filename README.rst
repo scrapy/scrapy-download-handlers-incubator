@@ -115,11 +115,12 @@ Features and limitations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 ============================== =============================================================================
-Proxies                        Yes (HTTPS proxies for HTTPS destinations are not supported on Python < 3.11)
+HTTP proxies                   Yes (HTTPS proxies for HTTPS destinations are not supported on Python < 3.11)
+SOCKS proxies                  No (not supported by the library)
 HTTP/2                         No (not supported by the library)
-TLS verbose logging            Partial (skipped for small responses)
-``response.ip_address``        Partial (skipped for small responses)
-``response.certificate``       Partial (DER bytes; skipped for small responses)
+TLS verbose logging            Yes
+``response.ip_address``        Yes
+``response.certificate``       Yes (DER bytes)
 Per-request ``bindaddress``    No (not supported by the library)
 Proxy certificate verification Follows ``DOWNLOAD_VERIFY_CERTIFICATES``
 ============================== =============================================================================
@@ -155,7 +156,8 @@ Features and limitations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 ============================== ========================================
-Proxies                        Yes
+HTTP proxies                   Yes
+SOCKS proxies                  Yes (SOCKS4, SOCKS5)
 HTTP/2                         Yes
 HTTP/3                         Yes (but not tested)
 TLS verbose logging            No (not supported by the library)
@@ -209,20 +211,20 @@ Enable it with:
 Features and limitations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-============================== ========================================
-Proxies                        Yes (separate connection pool per proxy)
-HTTP/2                         Yes
+============================== ===========================================================================
+HTTP proxies                   Yes (separate connection pool per proxy)
+SOCKS proxies                  Yes (SOCKS5; separate connection pool per proxy; requires ``httpx[socks]``)
+HTTP/2                         Yes (requires ``httpx[http2]``)
 HTTP/3                         No (not supported by the library)
 TLS verbose logging            Yes
 ``response.ip_address``        Yes
 ``response.certificate``       Yes (DER bytes)
 Per-request ``bindaddress``    No (not supported by the library)
 Proxy certificate verification Follows ``DOWNLOAD_VERIFY_CERTIFICATES``
-============================== ========================================
+============================== ===========================================================================
 
 Notable features supported by the library but not implemented:
 
-* SOCKS5 proxies
 * Alternative transports
 * Limiting the number of per-proxy connection pool to save resources
 
@@ -257,8 +259,9 @@ Enable it with:
 Features and limitations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-============================== ========================================
-Proxies                        Yes
+============================== ==================================================
+HTTP proxies                   Yes
+SOCKS proxies                  Yes (SOCKS4, SOCKS5; requires ``niquests[socks]``)
 HTTP/2                         Yes
 HTTP/3                         No (not implemented)
 TLS verbose logging            Yes
@@ -266,12 +269,11 @@ TLS verbose logging            Yes
 ``response.certificate``       Yes (DER bytes)
 Per-request ``bindaddress``    No (not supported by the library)
 Proxy certificate verification Follows ``DOWNLOAD_VERIFY_CERTIFICATES``
-============================== ========================================
+============================== ==================================================
 
 Notable features supported by the library but not implemented:
 
 * Custom DNS resolvers
-* SOCKS5 proxies
 * HTTP/2 tunables
 
 Settings

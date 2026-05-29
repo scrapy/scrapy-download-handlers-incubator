@@ -40,10 +40,10 @@ curl-cffi = [
     "curl_cffi>=0.14.0",
 ]
 httpx = [
-    "httpx[http2]>=0.28.1",
+    "httpx[http2,socks]>=0.28.1",
 ]
 niquests = [
-    "niquests>=3.18.6",
+    "niquests[socks]>=3.18.6",
 ]
 pyreqwest = [
     "pyreqwest>=0.11.0;python_version >= '3.11'",

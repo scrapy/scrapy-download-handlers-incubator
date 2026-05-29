@@ -5,6 +5,7 @@ from __future__ import annotations
 import ipaddress
 import logging
 from contextlib import asynccontextmanager
+from importlib.util import find_spec
 from types import MethodType
 from typing import TYPE_CHECKING, Any, ClassVar
 from urllib.parse import urlparse
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
     from scrapy import Request
     from scrapy.crawler import Crawler
 
+HAS_SOCKS = False
 
 try:
     import niquests.adapters
@@ -38,6 +40,8 @@ try:
     import urllib3.exceptions
 except ImportError:
     niquests = None  # type: ignore[assignment]
+else:
+    HAS_SOCKS = find_spec("python_socks") is not None
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +109,10 @@ class NiquestsDownloadHandler(_Base):
         self, request: Request, timeout: float
     ) -> AsyncIterator[niquests.AsyncResponse]:
         proxy = self._extract_proxy_url_with_creds(request)
+        if proxy and proxy.startswith("socks") and not HAS_SOCKS:  # pragma: no cover
+            raise ValueError(
+                f"SOCKS proxy support in {type(self).__name__} requires the 'niquests[socks]' extra to be installed."
+            )
         headers = request.headers.to_unicode_dict()
         for k in list(headers):
             if headers[k] == "":
