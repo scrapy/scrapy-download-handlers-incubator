@@ -214,7 +214,7 @@ Features and limitations
 ============================== ===========================================================================
 HTTP proxies                   Yes (separate connection pool per proxy)
 SOCKS proxies                  Yes (SOCKS5; separate connection pool per proxy; requires ``httpx[socks]``)
-HTTP/2                         Yes
+HTTP/2                         Yes (requires ``httpx[http2]``)
 HTTP/3                         No (not supported by the library)
 TLS verbose logging            Yes
 ``response.ip_address``        Yes
