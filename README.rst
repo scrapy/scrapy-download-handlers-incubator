@@ -221,7 +221,7 @@ TLS verbose logging            Yes
 ``response.certificate``       Yes (DER bytes)
 Per-request ``bindaddress``    No (not supported by the library)
 Proxy certificate verification Follows ``DOWNLOAD_VERIFY_CERTIFICATES``
-============================== ============================================================================
+============================== ===========================================================================
 
 Notable features supported by the library but not implemented:
 
