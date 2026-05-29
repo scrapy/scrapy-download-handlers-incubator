@@ -35,12 +35,35 @@ if TYPE_CHECKING:
     from scrapy.crawler import Crawler
 
 
+HAS_SOCKS = HAS_HTTP2 = False
+
 try:
-    import h2.exceptions
     import httpx
-    import socksio.exceptions
 except ImportError:
     httpx = None  # type: ignore[assignment]
+else:
+    # a small hack to avoid importing these optional extras unconditionally
+
+    DOWNLOAD_FAILED_EXCEPTIONS: tuple[type[BaseException], ...] = (
+        httpx.NetworkError,
+        httpx.RemoteProtocolError,
+    )
+
+    try:
+        import h2.exceptions
+
+        HAS_HTTP2 = True
+        DOWNLOAD_FAILED_EXCEPTIONS += (h2.exceptions.InvalidBodyLengthError,)
+    except ImportError:
+        pass
+
+    try:
+        import socksio.exceptions
+
+        HAS_SOCKS = True
+        DOWNLOAD_FAILED_EXCEPTIONS += (socksio.exceptions.ProtocolError,)
+    except ImportError:
+        pass
 
 
 if TYPE_CHECKING:
@@ -58,6 +81,10 @@ class HttpxDownloadHandler(_Base):
             "DOWNLOAD_VERIFY_CERTIFICATES"
         )
         self._enable_h2: bool = crawler.settings.getbool("HTTPX_HTTP2_ENABLED")
+        if self._enable_h2 and not HAS_HTTP2:  # pragma: no cover
+            raise NotConfigured(
+                f"HTTP/2 support in {type(self).__name__} requires the 'httpx[http2]' extra to be installed."
+            )
         self._ssl_context: ssl.SSLContext = _make_ssl_context(crawler.settings)
         self._bind_host: str | None = self._get_bind_address_host()
         self._limits: httpx.Limits = httpx.Limits(
@@ -118,7 +145,13 @@ class HttpxDownloadHandler(_Base):
     async def _make_request(
         self, request: Request, timeout: float
     ) -> AsyncIterator[httpx.Response]:
-        client = self._get_client(self._extract_proxy_url_with_creds(request))
+        proxy = self._extract_proxy_url_with_creds(request)
+        if proxy and proxy.startswith("socks") and not HAS_SOCKS:  # pragma: no cover
+            raise ValueError(
+                f"SOCKS proxy support in {type(self).__name__} requires the 'httpx[socks]' extra to be installed."
+            )
+        client = self._get_client(proxy)
+
         try:
             async with client.stream(
                 request.method,
@@ -146,12 +179,7 @@ class HttpxDownloadHandler(_Base):
             raise DownloadConnectionRefusedError(str(e)) from e
         except httpx.ProxyError as e:
             raise DownloadConnectionRefusedError(str(e)) from e
-        except (
-            httpx.NetworkError,
-            httpx.RemoteProtocolError,
-            h2.exceptions.InvalidBodyLengthError,
-            socksio.exceptions.ProtocolError,
-        ) as e:
+        except DOWNLOAD_FAILED_EXCEPTIONS as e:
             raise DownloadFailedError(str(e)) from e
 
     @staticmethod
