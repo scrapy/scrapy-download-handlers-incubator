@@ -54,7 +54,7 @@ else:
 
         HAS_HTTP2 = True
         DOWNLOAD_FAILED_EXCEPTIONS += (h2.exceptions.InvalidBodyLengthError,)
-    except ImportError:
+    except ImportError:  # pragma: no cover
         pass
 
     try:
@@ -62,7 +62,7 @@ else:
 
         HAS_SOCKS = True
         DOWNLOAD_FAILED_EXCEPTIONS += (socksio.exceptions.ProtocolError,)
-    except ImportError:
+    except ImportError:  # pragma: no cover
         pass
 
 
