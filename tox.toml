@@ -1,6 +1,6 @@
 requires = ["tox>=4.25"]
 env_list = [
-    { product = [["py"], ["aiohttp", "curlcffi", "httpx", "niquests", "pyreqwest", "all", "pinned"], ["", "noreactor"]] },
+    { product = [["py"], ["aiohttp", "curlcffi", "httpx", "niquests", "pyreqwest", "wreq", "all", "pinned"], ["", "noreactor"]] },
     "pre-commit",
     "typing",
     "twinecheck",
@@ -26,6 +26,7 @@ deps = [
         "httpx[http2,socks]==0.28.1",
         "niquests[socks]==3.18.6",
         "pyreqwest==0.11.0;python_version >= '3.11'",  # the easiest is to skip this on CI
+        "wreq==0.11.0",
     ], extend = true },
 ]
 extras = [
@@ -34,6 +35,7 @@ extras = [
     { replace = "if", condition = "factor.all or factor.httpx", then = ["httpx"], extend = true },
     { replace = "if", condition = "factor.all or factor.niquests", then = ["niquests"], extend = true },
     { replace = "if", condition = "factor.all or factor.pyreqwest", then = ["pyreqwest"], extend = true },
+    { replace = "if", condition = "factor.all or factor.wreq", then = ["wreq"], extend = true },
 ]
 commands = [
     [
@@ -73,6 +75,7 @@ deps = [
     "pytest==9.0.3",
     "Scrapy==2.16.0",
     "Twisted==26.4.0",
+    "wreq==0.11.3",
 ]
 commands = [
     ["mypy", { replace = "posargs", default = ["src", "tests"], extend = true }],
