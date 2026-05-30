@@ -155,7 +155,12 @@ class NiquestsDownloadHandler(_Base):
 
     @staticmethod
     def _extract_headers(response: niquests.AsyncResponse) -> Headers:
-        return Headers(response.headers.items())  # type: ignore[no-untyped-call]
+        # response.headers is niquests.structures.CaseInsensitiveDict which
+        # doesn't support multiple values, response.raw.headers is
+        # urllib3.HTTPHeaderDict which supports them
+        assert isinstance(response.raw, urllib3.HTTPResponse)
+        assert isinstance(response.raw.headers, urllib3.HTTPHeaderDict)
+        return Headers(response.raw.headers.items())
 
     @staticmethod
     def _build_base_response_args(

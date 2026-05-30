@@ -49,14 +49,15 @@ class NiquestsDownloadHandlerMixin:
 
 class TestHttp(NiquestsDownloadHandlerMixin, TestHttpBase):
     handler_supports_bindaddress_meta = False
-    handler_merges_headers = True
+    # niquests.structures.CaseInsensitiveDict doesn't support multiple values
+    handler_merges_request_headers = True
     # urllib3.future always adds these, even with an empty session.headers
     always_present_req_headers = frozenset({"Accept-Encoding", "User-Agent"})
 
 
 class TestHttps(NiquestsDownloadHandlerMixin, TestHttpsBase):
     handler_supports_bindaddress_meta = False
-    handler_merges_headers = True
+    handler_merges_request_headers = True
     always_present_req_headers = TestHttp.always_present_req_headers
     tls_log_message = "SSL connection to 127.0.0.1 using protocol TLSv1_3, cipher"
 

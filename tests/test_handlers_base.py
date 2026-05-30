@@ -63,8 +63,8 @@ class TestHttpBase(ABC):
     http2: bool = False
     # whether the handler supports per-request bindaddress
     handler_supports_bindaddress_meta: bool = True
-    # whether the handler merges values for the same header name
-    handler_merges_headers: bool = False
+    # whether the handler merges values for the same request header name
+    handler_merges_request_headers: bool = False
     # RFC 9113 §8.1.1 explicitly says that a Content-Length mismatch is a
     # stream error (of type PROTOCOL_ERROR) so the client will send
     # RST_STREAM. Some libraries do only this while e.g. h2 also closes the
@@ -206,7 +206,9 @@ class TestHttpBase(ABC):
         assert response.status == HTTPStatus.OK
         body = json.loads(response.body.decode("utf-8"))
         assert "headers" in body
-        expected = ["foo", "bar"] if not self.handler_merges_headers else ["foo,bar"]
+        expected = (
+            ["foo", "bar"] if not self.handler_merges_request_headers else ["foo,bar"]
+        )
         assert body["headers"]["X-Custom-Header"] == expected
 
     @coroutine_test
@@ -460,10 +462,7 @@ class TestHttpBase(ABC):
         request = Request(mockserver.url("/duplicate-header", is_secure=self.is_secure))
         async with self.get_dh() as download_handler:
             response = await download_handler.download_request(request)
-        expected = (
-            [b"a=b", b"c=d"] if not self.handler_merges_headers else [b"a=b, c=d"]
-        )
-        assert response.headers.getlist(b"Set-Cookie") == expected
+        assert response.headers.getlist(b"Set-Cookie") == [b"a=b", b"c=d"]
 
     @coroutine_test
     async def test_download_is_not_automatically_gzip_decoded(
