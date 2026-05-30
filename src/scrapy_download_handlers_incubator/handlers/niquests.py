@@ -152,6 +152,11 @@ class NiquestsDownloadHandler(_Base):
                     ):
                         raise DownloadTimeoutError(str(e)) from e
             raise DownloadFailedError(str(e)) from e
+        except (
+            niquests.exceptions.RequestException,
+            urllib3.exceptions.HTTPError,
+        ) as e:
+            raise DownloadFailedError(str(e)) from e
 
     @staticmethod
     def _extract_headers(response: niquests.AsyncResponse) -> Headers:

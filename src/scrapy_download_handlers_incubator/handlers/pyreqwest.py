@@ -113,12 +113,14 @@ class PyreqwestDownloadHandler(_Base):
         except pyreqwest.exceptions.BuilderError as e:
             if _find_in_causes(e, "URL scheme is not allowed"):
                 raise UnsupportedURLSchemeError(str(e)) from e
-            raise
+            raise DownloadFailedError(str(e)) from e
         except pyreqwest.exceptions.ConnectError as e:
             if _find_in_causes(e, "dns error"):
                 raise CannotResolveHostError(str(e)) from e
             if _find_in_causes(e, "tcp connect error"):
                 raise DownloadConnectionRefusedError(str(e)) from e
+            raise DownloadFailedError(str(e)) from e
+        except pyreqwest.exceptions.RequestError as e:
             raise DownloadFailedError(str(e)) from e
 
     @staticmethod
