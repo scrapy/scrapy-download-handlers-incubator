@@ -60,7 +60,7 @@ The following table summarizes the most important differences:
 Handler                   HTTP/2       HTTP/3           Proxies      TLS logging  Impersonation TLS version limits
 ========================= ============ ================ ============ ============ ============= ==================
 (HTTP11DownloadHandler)   Not possible Not possible     Yes          Yes          Not possible  No
-AiohttpDownloadHandler    Not possible Not possible     Yes          Partial      Not possible  No
+AiohttpDownloadHandler    Not possible Not possible     Yes          Yes          Not possible  No
 CurlCffiDownloadHandler   Yes          Yes (not tested) Yes          Not possible No            Not possible
 HttpxDownloadHandler      Yes          Not possible     Yes          Yes          Not possible  No
 NiquestsDownloadHandler   Yes          No               Yes          Yes          Not possible  Not possible
