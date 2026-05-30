@@ -48,8 +48,8 @@ else:
     # a small hack to avoid importing these optional extras unconditionally
 
     DOWNLOAD_FAILED_EXCEPTIONS: tuple[type[BaseException], ...] = (
-        httpx.NetworkError,
-        httpx.RemoteProtocolError,
+        httpx.RequestError,
+        httpx.InvalidURL,
     )
 
     try:

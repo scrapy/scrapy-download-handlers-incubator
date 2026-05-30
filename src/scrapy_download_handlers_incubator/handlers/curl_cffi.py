@@ -92,7 +92,7 @@ class CurlCffiDownloadHandler(_Base):
             )
 
     @asynccontextmanager
-    async def _make_request(  # noqa: PLR0912
+    async def _make_request(
         self, request: Request, timeout: float
     ) -> AsyncIterator[curl_cffi.Response]:
         proxy = self._extract_proxy_url_with_creds(request)
@@ -140,13 +140,8 @@ class CurlCffiDownloadHandler(_Base):
                     | curl_cffi.requests.exceptions.ProxyError
                 ):
                     raise DownloadConnectionRefusedError(str(e)) from e
-                case (
-                    curl_cffi.requests.exceptions.RequestException
-                    | curl_cffi.requests.exceptions.HTTPError
-                ):
-                    raise DownloadFailedError(str(e)) from e
                 case _:
-                    raise
+                    raise DownloadFailedError(str(e)) from e
         finally:
             if response is not None:
                 # work around hanging in e.g. test_download_with_content_length()
