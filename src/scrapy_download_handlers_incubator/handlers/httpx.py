@@ -28,7 +28,7 @@ from scrapy.utils.ssl import (
     _make_ssl_context,
 )
 
-from scrapy_download_handlers_incubator.handlers.utils import iter_exc_causes
+from scrapy_download_handlers_incubator.utils import iter_exc_causes
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator

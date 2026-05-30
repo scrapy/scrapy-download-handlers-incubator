@@ -26,7 +26,7 @@ from scrapy.http import Headers
 from scrapy.utils._download_handlers import NullCookieJar
 from scrapy.utils.ssl import _make_insecure_ssl_ctx
 
-from scrapy_download_handlers_incubator.handlers.utils import iter_exc_causes
+from scrapy_download_handlers_incubator.utils import iter_exc_causes
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
