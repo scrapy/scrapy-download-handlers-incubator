@@ -56,7 +56,6 @@ class CurlCffiDownloadHandler(_Base):
 
     def __init__(self, crawler: Crawler):
         super().__init__(crawler)
-        # _ssl_context = _make_ssl_context(crawler.settings)
         verify_certificates: bool = crawler.settings.getbool(
             "DOWNLOAD_VERIFY_CERTIFICATES"
         )

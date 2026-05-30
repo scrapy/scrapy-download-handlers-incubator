@@ -125,19 +125,9 @@ class AiohttpDownloadHandler(_Base):
             aiohttp.NonHttpUrlClientError,
         ) as e:
             raise UnsupportedURLSchemeError(str(e)) from e
+        except aiohttp.ClientConnectorDNSError as e:
+            raise CannotResolveHostError(str(e)) from e
         except aiohttp.ClientConnectorError as e:
-            if (
-                # os_error is absent on ClientConnectorCertificateError before aiohttp 3.13.4
-                hasattr(e, "os_error")
-                and isinstance(e.os_error, OSError)
-                and e.os_error.strerror
-                and (
-                    "Name or service not known" in e.os_error.strerror
-                    or "getaddrinfo failed" in e.os_error.strerror
-                    or "nodename nor servname" in e.os_error.strerror
-                )
-            ):
-                raise CannotResolveHostError(str(e)) from e
             raise DownloadConnectionRefusedError(str(e)) from e
         except aiohttp.ClientError as e:
             raise DownloadFailedError(str(e)) from e
