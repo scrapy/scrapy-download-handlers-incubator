@@ -78,12 +78,8 @@ class TestHttp(PyreqwestDownloadHandlerMixin, TestHttpBase):
 
 class TestHttps(PyreqwestDownloadHandlerMixin, TestHttpsBase):
     handler_supports_bindaddress_meta = False
+    handler_supports_tls_logging = False
     always_present_req_headers = TestHttp.always_present_req_headers
-
-    @pytest.mark.skip(reason="TLS verbose logging is not implemented")
-    @coroutine_test
-    async def test_tls_logging(self) -> None:  # type: ignore[override]
-        pass
 
 
 class TestHttp2(TestHttps):
@@ -147,7 +143,4 @@ class TestHttpsWithCrawler(TestHttpWithCrawler):
 
 @pytest.mark.requires_internet
 class TestRealWebsite(PyreqwestDownloadHandlerMixin, TestRealWebsiteBase):
-    @pytest.mark.skip(reason="TLS verbose logging is not implemented")
-    @coroutine_test
-    async def test_tls_logging(self) -> None:  # type: ignore[override]
-        pass
+    handler_supports_tls_logging = False

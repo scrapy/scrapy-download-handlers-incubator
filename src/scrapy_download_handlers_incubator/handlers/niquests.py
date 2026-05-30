@@ -26,6 +26,8 @@ from scrapy.http import Headers
 from scrapy.utils._download_handlers import NullCookieJar
 from scrapy.utils.ssl import _make_insecure_ssl_ctx
 
+from scrapy_download_handlers_incubator.handlers.utils import iter_exc_causes
+
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
 
@@ -138,15 +140,17 @@ class NiquestsDownloadHandler(_Base):
         except niquests.exceptions.InvalidSchema as e:
             raise UnsupportedURLSchemeError(str(e)) from e
         except niquests.exceptions.ConnectionError as e:
-            match e.__context__:
-                case urllib3.exceptions.MaxRetryError():
-                    match e.__context__.__context__:
-                        case urllib3.exceptions.NameResolutionError():
-                            raise CannotResolveHostError(str(e)) from e
-                        case urllib3.exceptions.NewConnectionError():
-                            raise DownloadConnectionRefusedError(str(e)) from e
-                case urllib3.exceptions.ReadTimeoutError():
-                    raise DownloadTimeoutError(str(e)) from e
+            for c in iter_exc_causes(e):
+                match c:
+                    case urllib3.exceptions.NameResolutionError():
+                        raise CannotResolveHostError(str(e)) from e
+                    case urllib3.exceptions.NewConnectionError():
+                        raise DownloadConnectionRefusedError(str(e)) from e
+                    case (
+                        urllib3.exceptions.ConnectTimeoutError()
+                        | urllib3.exceptions.ReadTimeoutError()
+                    ):
+                        raise DownloadTimeoutError(str(e)) from e
             raise DownloadFailedError(str(e)) from e
 
     @staticmethod

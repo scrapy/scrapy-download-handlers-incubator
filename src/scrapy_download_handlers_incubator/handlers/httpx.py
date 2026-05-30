@@ -5,6 +5,7 @@ from __future__ import annotations
 import ipaddress
 import ssl
 from contextlib import asynccontextmanager
+from socket import gaierror
 from typing import TYPE_CHECKING, ClassVar
 
 from scrapy.core.downloader.handlers._base_streaming import (
@@ -26,6 +27,8 @@ from scrapy.utils.ssl import (
     _make_insecure_ssl_ctx,
     _make_ssl_context,
 )
+
+from scrapy_download_handlers_incubator.handlers.utils import iter_exc_causes
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -168,14 +171,8 @@ class HttpxDownloadHandler(_Base):
         except httpx.UnsupportedProtocol as e:
             raise UnsupportedURLSchemeError(str(e)) from e
         except httpx.ConnectError as e:
-            error_message = str(e)
-            if (
-                "Name or service not known" in error_message
-                or "getaddrinfo failed" in error_message
-                or "nodename nor servname" in error_message
-                or "Temporary failure in name resolution" in error_message
-            ):
-                raise CannotResolveHostError(error_message) from e
+            if any(isinstance(c, gaierror) for c in iter_exc_causes(e)):
+                raise CannotResolveHostError(str(e)) from e
             raise DownloadConnectionRefusedError(str(e)) from e
         except httpx.ProxyError as e:
             raise DownloadConnectionRefusedError(str(e)) from e

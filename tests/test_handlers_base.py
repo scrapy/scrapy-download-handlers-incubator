@@ -815,6 +815,7 @@ class TestHttpBase(ABC):
 
 class TestHttpsBase(TestHttpBase):
     is_secure = True
+    handler_supports_tls_logging: bool = True
 
     tls_log_message = (
         'SSL connection certificate: issuer "/C=IE/O=Scrapy/CN=localhost", '
@@ -831,6 +832,8 @@ class TestHttpsBase(TestHttpBase):
     async def test_tls_logging(
         self, mockserver: MockServer, caplog: pytest.LogCaptureFixture
     ) -> None:
+        if not self.handler_supports_tls_logging:
+            pytest.skip("TLS verbose logging is not supported.")
         request = Request(mockserver.url("/text", is_secure=self.is_secure))
         async with self.get_dh(
             {"DOWNLOADER_CLIENT_TLS_VERBOSE_LOGGING": True}
@@ -1300,6 +1303,8 @@ class TestMitmProxyBase(ABC):
 
 
 class TestRealWebsiteBase(ABC):
+    handler_supports_tls_logging: bool = True
+
     @property
     @abstractmethod
     def download_handler_cls(self) -> type[DownloadHandlerProtocol]:
@@ -1357,6 +1362,8 @@ class TestRealWebsiteBase(ABC):
     async def test_tls_logging(
         self, caplog: pytest.LogCaptureFixture, verify_certs: bool
     ) -> None:
+        if not self.handler_supports_tls_logging:
+            pytest.skip("TLS verbose logging is not supported.")
         request = Request("https://books.toscrape.com/")
         async with self.get_dh(
             {
